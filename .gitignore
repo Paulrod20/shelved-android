@@ -32,3 +32,13 @@ google-services.json
 
 # Android Profiling
 *.hprof
+# Android Studio / Gradle
+.gradle/
+.idea/
+*.iml
+local.properties
+build/
+app/build/
+
+# Native secrets
+secrets.properties
