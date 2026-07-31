@@ -6,20 +6,19 @@ This repository is a native Android application: Kotlin and Jetpack Compose only
 | --- | --- |
 | React Native UI | Jetpack Compose composables |
 | React Navigation tabs | AndroidX navigation state |
-| AsyncStorage | Room for games and DataStore for profile/preferences |
-| React contexts/hooks | ViewModels, repositories, and `StateFlow` |
-| `fetch` / `AbortController` | Retrofit + OkHttp + Kotlin coroutines |
+| AsyncStorage | Device-local repository with a versionable JSON persistence shape |
+| React contexts/hooks | `ShelvedViewModel`, repository, and `StateFlow` |
+| `fetch` / `AbortController` | `HttpURLConnection` + Kotlin coroutines + LRU search cache |
 | React Native sheets | Material 3 `ModalBottomSheet` |
 
 The Android package tree mirrors the RN feature boundaries:
 
 ```text
 app/src/main/java/com/paulrod/shelved/
-  data/          # Room, DataStore, RAWG API, repositories
-  ui/components/ # GameCard, StatusTabs, bottom sheets, shared scaffolds
+  data/          # Persistent repository, RAWG API, and models
+  ui/            # ViewModel and StateFlows
   ui/navigation/ # Backlog, Search, Stats, Profile destinations
-  ui/screens/    # one Compose screen per existing RN screen
   ui/theme/      # Shelved colors and theme
 ```
 
-The next migration pass will implement the Room-backed backlog and the Add Game flow, then the RAWG client, profile, and stats.
+The first native feature pass is complete: backlog management, search, profile, stats, bottom sheets, edge-to-edge behavior, and floating navigation are implemented. Future schema growth can move the repository to Room without changing the UI-facing StateFlow contract.
