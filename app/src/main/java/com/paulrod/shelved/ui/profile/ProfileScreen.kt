@@ -71,7 +71,7 @@ fun ProfileScreen(state: ProfileUiState, onAction: (ProfileAction) -> Unit) {
             }
             item { SectionLabel("Favorite games") }
             if (state.favoriteGames.isEmpty()) {
-                item { ProfileText("", "Pick up to three favorites in Edit.") }
+                item { ProfileText("", "Pick up to six favorites in Edit.") }
             } else {
                 item { FavoriteGames(state.favoriteGames) }
             }
@@ -154,22 +154,31 @@ private fun ProfileText(value: String, placeholder: String) {
 
 @Composable
 private fun FavoriteGames(games: List<Game>) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        games.forEach { game ->
-            Column(Modifier.weight(1f)) {
-                GameCover(game.coverImageUrl, Modifier.fillMaxWidth())
-                Text(
-                    game.name,
-                    color = TextPrimary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                )
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        games.take(6).chunked(3).forEach { rowGames ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                rowGames.forEach { game ->
+                    Column(Modifier.weight(1f)) {
+                        GameCover(game.coverImageUrl, Modifier.fillMaxWidth())
+                        Text(
+                            game.name,
+                            color = TextPrimary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                        )
+                    }
+                }
+                repeat(3 - rowGames.size) {
+                    Spacer(Modifier.weight(1f))
+                }
             }
         }
-        repeat(3 - games.size) { Spacer(Modifier.weight(1f)) }
     }
 }
 
@@ -193,7 +202,7 @@ private fun EditProfileSheet(
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(Platform.entries) { item -> FilterPill(item.label, item == platform) { platform = item } }
         }
-        SectionLabel("Favorite games · ${favorites.size}/3")
+        SectionLabel("Favorite games · ${favorites.size}/6")
         if (games.isEmpty()) {
             Text("Add games to your shelf first.", color = TextMuted)
         } else {
@@ -205,7 +214,7 @@ private fun EditProfileSheet(
                         onClick = {
                             favorites = when {
                                 game.id in favorites -> favorites - game.id
-                                favorites.size < 3 -> favorites + game.id
+                                favorites.size < 6 -> favorites + game.id
                                 else -> favorites
                             }
                         },
