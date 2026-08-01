@@ -19,6 +19,7 @@ import com.paulrod.shelved.ui.search.SearchUiState
 import com.paulrod.shelved.ui.stats.StatsUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.milliseconds
 
 class ShelvedViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = ShelvedRepository(application)
@@ -38,6 +40,7 @@ class ShelvedViewModel(application: Application) : AndroidViewModel(application)
     private val _addSearchUiState = MutableStateFlow(SearchUiState())
     private var searchJob: Job? = null
     private var addSearchJob: Job? = null
+    private var detailsJob: Job? = null
 
     val backlogUiState: StateFlow<BacklogUiState> = combine(repository.games, backlogControls) { games, controls ->
         BacklogUiState(
@@ -119,11 +122,18 @@ class ShelvedViewModel(application: Application) : AndroidViewModel(application)
                 searchJob?.cancel()
                 searchJob = launchSearch(action.query, _searchUiState)
             }
-            is SearchAction.GameSelected -> _searchUiState.value = _searchUiState.value.copy(selectedGame = action.game)
-            SearchAction.GameDismissed -> _searchUiState.value = _searchUiState.value.copy(selectedGame = null)
+            is SearchAction.GameSelected -> loadGameDetails(action.game)
+            SearchAction.GameDismissed -> {
+                detailsJob?.cancel()
+                _searchUiState.value = _searchUiState.value.copy(
+                    selectedGame = null,
+                    isDetailsLoading = false,
+                    detailsError = null,
+                )
+            }
             is SearchAction.GameAdded -> {
                 repository.addGame(action.game)
-                _searchUiState.value = _searchUiState.value.copy(selectedGame = null)
+                _searchUiState.value = _searchUiState.value.copy(selectedGame = null, detailsError = null)
             }
         }
     }
@@ -157,7 +167,7 @@ class ShelvedViewModel(application: Application) : AndroidViewModel(application)
             return null
         }
         return viewModelScope.launch {
-            delay(300)
+            delay(300.milliseconds)
             destination.value = destination.value.copy(status = SearchStatus.Loading)
             runCatching { withContext(Dispatchers.IO) { api.search(query) } }
                 .onSuccess { results -> destination.value = destination.value.copy(results = results, status = SearchStatus.Ready) }
@@ -174,7 +184,39 @@ class ShelvedViewModel(application: Application) : AndroidViewModel(application)
         addSearchJob?.cancel()
         _addSearchUiState.value = SearchUiState()
     }
+
+    private fun loadGameDetails(game: Game) {
+        detailsJob?.cancel()
+        _searchUiState.value = _searchUiState.value.copy(
+            selectedGame = game,
+            isDetailsLoading = true,
+            detailsError = null,
+        )
+        detailsJob = viewModelScope.launch {
+            try {
+                val details = withContext(Dispatchers.IO) { api.details(game) }
+                _searchUiState.value = _searchUiState.value.copy(
+                    selectedGame = game.mergeDetails(details),
+                    isDetailsLoading = false,
+                )
+            } catch (error: Throwable) {
+                if (error is CancellationException) throw error
+                _searchUiState.value = _searchUiState.value.copy(
+                    isDetailsLoading = false,
+                    detailsError = error.message ?: "Could not load all game details.",
+                )
+            }
+        }
+    }
 }
+
+private fun Game.mergeDetails(details: Game): Game = copy(
+    coverImageUrl = details.coverImageUrl ?: coverImageUrl,
+    released = details.released ?: released,
+    playtime = details.playtime ?: playtime,
+    platforms = details.platforms.ifEmpty { platforms },
+    description = details.description,
+)
 
 private data class BacklogControls(
     val statusFilter: GameStatus? = null,

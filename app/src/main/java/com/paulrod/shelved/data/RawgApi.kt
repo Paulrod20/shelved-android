@@ -28,8 +28,10 @@ class RawgApi {
     }
 
     fun details(game: Game): Game {
-        if (BuildConfig.RAWG_API_KEY.isBlank()) return game
-        return runCatching { request("/games/${game.id}").toGame() }.getOrDefault(game)
+        check(BuildConfig.RAWG_API_KEY.isNotBlank()) {
+            "RAWG API key is missing. Add RAWG_API_KEY to local.properties."
+        }
+        return request("/games/${game.id}").toGame()
     }
 
     private fun request(path: String): JSONObject {

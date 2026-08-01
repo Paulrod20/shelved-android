@@ -7,6 +7,8 @@ data class SearchUiState(
     val results: List<Game> = emptyList(),
     val status: SearchStatus = SearchStatus.Idle,
     val selectedGame: Game? = null,
+    val isDetailsLoading: Boolean = false,
+    val detailsError: String? = null,
     val libraryGameIds: Set<String> = emptySet(),
 )
 

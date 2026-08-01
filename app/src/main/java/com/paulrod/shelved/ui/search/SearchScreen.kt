@@ -55,6 +55,8 @@ fun SearchScreen(
         CatalogGameSheet(
             game = game,
             alreadyAdded = game.id in state.libraryGameIds,
+            isDetailsLoading = state.isDetailsLoading,
+            detailsError = state.detailsError,
             onClose = { onAction(SearchAction.GameDismissed) },
             onAdd = { onAction(SearchAction.GameAdded(it)) },
         )

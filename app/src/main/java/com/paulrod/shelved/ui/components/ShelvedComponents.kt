@@ -2,6 +2,8 @@ package com.paulrod.shelved.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +28,7 @@ import androidx.compose.material.icons.outlined.Gamepad
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -207,29 +210,73 @@ fun SearchResultRow(game: Game, onClick: () -> Unit) {
 fun CatalogGameSheet(
     game: Game,
     alreadyAdded: Boolean = false,
+    isDetailsLoading: Boolean = false,
+    detailsError: String? = null,
     onClose: () -> Unit,
     onAdd: (Game) -> Unit,
 ) {
     var status by remember { mutableStateOf(GameStatus.BACKLOG) }
+    var descriptionExpanded by remember(game.id) { mutableStateOf(false) }
     ShelvedSheet("Game Details", onClose) {
-        Row(Modifier.fillMaxWidth()) {
-            GameCover(game.coverImageUrl, Modifier.weight(.36f))
-            Column(Modifier.weight(.64f).padding(start = 16.dp)) {
-                Text(game.name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                game.released?.take(4)?.let { Text(it, color = TextMuted, modifier = Modifier.padding(top = 4.dp)) }
-                game.playtime?.let { Text("About $it hours", color = TextMuted, fontSize = 13.sp) }
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Row(Modifier.fillMaxWidth()) {
+                GameCover(game.coverImageUrl, Modifier.weight(.36f))
+                Column(Modifier.weight(.64f).padding(start = 16.dp)) {
+                    Text(game.name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    game.released?.take(4)?.let { Text(it, color = TextMuted, modifier = Modifier.padding(top = 4.dp)) }
+                    game.playtime?.let { Text("About $it hours", color = TextMuted, fontSize = 13.sp) }
+                }
             }
+            if (isDetailsLoading) {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CircularProgressIndicator(color = Accent, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                    Text("Loading game details…", color = TextMuted, fontSize = 13.sp)
+                }
+            }
+            game.description?.let { description ->
+                SectionLabel("About")
+                if (descriptionExpanded) {
+                    TextButton(onClick = { descriptionExpanded = false }) {
+                        Text("Show less", color = Accent)
+                    }
+                }
+                Text(
+                    description,
+                    color = TextPrimary,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                    maxLines = if (descriptionExpanded) Int.MAX_VALUE else 4,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (!descriptionExpanded && description.length > 240) {
+                    TextButton(onClick = { descriptionExpanded = true }) {
+                        Text("Read more", color = Accent)
+                    }
+                }
+            }
+            detailsError?.let { message ->
+                Text(message, color = TextMuted, fontSize = 13.sp, modifier = Modifier.padding(top = 16.dp))
+            }
+            if (game.platforms.isNotEmpty()) {
+                SectionLabel("Platforms")
+                Text(game.platforms.take(4).joinToString("  •  "), color = TextMuted, fontSize = 13.sp)
+            }
+            SectionLabel("Add to")
+            StatusPicker(status) { status = it }
+            PrimaryButton(
+                if (alreadyAdded) "Already in Shelved" else "Add to Shelved",
+                enabled = !alreadyAdded,
+            ) { onAdd(game.copy(status = status)) }
         }
-        if (game.platforms.isNotEmpty()) {
-            SectionLabel("Platforms")
-            Text(game.platforms.take(4).joinToString("  •  "), color = TextMuted, fontSize = 13.sp)
-        }
-        SectionLabel("Add to")
-        StatusPicker(status) { status = it }
-        PrimaryButton(
-            if (alreadyAdded) "Already in Shelved" else "Add to Shelved",
-            enabled = !alreadyAdded,
-        ) { onAdd(game.copy(status = status)) }
     }
 }
 
