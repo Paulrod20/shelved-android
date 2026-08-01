@@ -60,11 +60,11 @@ fun FloatingNavigation(selected: Destination, onSelect: (Destination) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, bottom = bottomInset + 12.dp)
-            .clip(RoundedCornerShape(32.dp))
+            .padding(start = 24.dp, end = 24.dp, bottom = bottomInset + 12.dp)
+            .clip(RoundedCornerShape(30.dp))
             .background(Surface.copy(alpha = .96f))
-            .border(1.dp, Color.White.copy(alpha = .10f), RoundedCornerShape(32.dp))
-            .padding(7.dp),
+            .border(1.dp, Color.White.copy(alpha = .10f), RoundedCornerShape(30.dp))
+            .padding(6.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -82,7 +82,7 @@ fun FloatingNavigation(selected: Destination, onSelect: (Destination) -> Unit) {
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                     ) { onSelect(item) }
-                    .padding(horizontal = 6.dp, vertical = 8.dp),
+                    .padding(horizontal = 6.dp, vertical = 7.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {

@@ -181,7 +181,10 @@ private fun FavoritePlatforms(platforms: List<Platform>) {
 
 @Composable
 private fun FavoriteGames(games: List<Game>) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(
+        modifier = Modifier.padding(bottom = 22.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
         games.take(6).chunked(3).forEach { rowGames ->
             Row(
                 modifier = Modifier.fillMaxWidth(),

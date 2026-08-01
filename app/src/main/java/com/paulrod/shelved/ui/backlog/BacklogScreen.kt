@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
@@ -168,7 +169,7 @@ private fun GameGrid(games: List<Game>, onSelect: (Game) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         items(games, key = { it.id }) { game -> GameCard(game) { onSelect(game) } }
-        item { Spacer(Modifier.height(24.dp)) }
+        item(span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(8.dp)) }
     }
 }
 
