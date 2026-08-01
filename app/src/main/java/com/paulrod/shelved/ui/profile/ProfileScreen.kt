@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
@@ -66,8 +67,8 @@ fun ProfileScreen(state: ProfileUiState, onAction: (ProfileAction) -> Unit) {
             item { ProfileIdentity(state.profile, state.games.size) }
             item { SectionLabel("Bio"); ProfileText(state.profile.bio, "Tap Edit to add a bio.") }
             item {
-                SectionLabel("Favorite platform")
-                ProfileText(state.profile.favoritePlatform?.label.orEmpty(), "No platform selected yet.")
+                SectionLabel("Favorite platforms")
+                FavoritePlatforms(state.profile.favoritePlatforms)
             }
             item { SectionLabel("Favorite games") }
             if (state.favoriteGames.isEmpty()) {
@@ -105,7 +106,7 @@ fun ProfileScreen(state: ProfileUiState, onAction: (ProfileAction) -> Unit) {
 private fun HeaderButton(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
-        modifier = Modifier.size(40.dp).clip(CircleShape).background(Surface),
+        modifier = Modifier.size(40.dp),
     ) { Icon(icon, description, tint = TextPrimary, modifier = Modifier.size(18.dp)) }
 }
 
@@ -153,6 +154,32 @@ private fun ProfileText(value: String, placeholder: String) {
 }
 
 @Composable
+private fun FavoritePlatforms(platforms: List<Platform>) {
+    if (platforms.isEmpty()) {
+        ProfileText("", "No platforms selected yet.")
+        return
+    }
+
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(bottom = 22.dp),
+    ) {
+        items(platforms) { platform ->
+            Text(
+                text = platform.label,
+                color = AccentText,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Accent)
+                    .padding(horizontal = 13.dp, vertical = 7.dp),
+            )
+        }
+    }
+}
+
+@Composable
 private fun FavoriteGames(games: List<Game>) {
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         games.take(6).chunked(3).forEach { rowGames ->
@@ -191,16 +218,20 @@ private fun EditProfileSheet(
 ) {
     var name by remember { mutableStateOf(profile.displayName) }
     var bio by remember { mutableStateOf(profile.bio) }
-    var platform by remember { mutableStateOf(profile.favoritePlatform) }
+    var platforms by remember { mutableStateOf(profile.favoritePlatforms) }
     var favorites by remember { mutableStateOf(profile.favoriteGameIds) }
     ShelvedSheet("Edit Profile", onClose) {
         SectionLabel("Display name")
         ShelvedField(name, { name = it }, "Your name")
         SectionLabel("Bio")
         ShelvedField(bio, { bio = it }, "A little about your gaming taste…", minLines = 3)
-        SectionLabel("Favorite platform")
+        SectionLabel("Favorite platforms")
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(Platform.entries) { item -> FilterPill(item.label, item == platform) { platform = item } }
+            items(Platform.entries) { item ->
+                FilterPill(item.label, item in platforms) {
+                    platforms = if (item in platforms) platforms - item else platforms + item
+                }
+            }
         }
         SectionLabel("Favorite games · ${favorites.size}/6")
         if (games.isEmpty()) {
@@ -222,7 +253,16 @@ private fun EditProfileSheet(
                 }
             }
         }
-        PrimaryButton("Save") { onSave(Profile(name.trim(), bio.trim(), platform, favorites)) }
+        PrimaryButton("Save") {
+            onSave(
+                Profile(
+                    displayName = name.trim(),
+                    bio = bio.trim(),
+                    favoritePlatforms = platforms,
+                    favoriteGameIds = favorites,
+                ),
+            )
+        }
     }
 }
 

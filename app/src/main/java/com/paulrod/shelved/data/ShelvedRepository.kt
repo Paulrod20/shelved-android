@@ -66,20 +66,36 @@ class ShelvedRepository(context: Context) {
     )
 
     private fun Profile.toJson() = JSONObject().apply {
-        put("displayName", displayName); put("bio", bio); put("favoritePlatform", favoritePlatform?.name)
+        put("displayName", displayName); put("bio", bio)
+        put("favoritePlatforms", JSONArray(favoritePlatforms.map { it.name }))
         put("favoriteGameIds", JSONArray(favoriteGameIds))
     }
 
     private fun JSONObject.toProfile() = Profile(
         displayName = optString("displayName"),
         bio = optString("bio"),
-        favoritePlatform = optNullableString("favoritePlatform")?.let { value ->
-            runCatching { Platform.valueOf(value) }.getOrNull()
-        },
+        favoritePlatforms = readFavoritePlatforms(),
         favoriteGameIds = optJSONArray("favoriteGameIds")?.let { array ->
             List(array.length()) { array.getString(it) }
         }.orEmpty(),
     )
+
+    private fun JSONObject.readFavoritePlatforms(): List<Platform> {
+        if (has("favoritePlatforms")) {
+            val platforms = optJSONArray("favoritePlatforms") ?: return emptyList()
+            return List(platforms.length()) { platforms.optString(it) }
+                .mapNotNull(::storedPlatform)
+                .distinct()
+        }
+
+        return listOfNotNull(optNullableString("favoritePlatform")?.let(::storedPlatform))
+    }
+
+    private fun storedPlatform(value: String): Platform? = when (value) {
+        "SWITCH" -> Platform.NINTENDO
+        "STEAM_DECK", "ROG_ALLY", "LEGION_GO", "XBOX_ALLY_X" -> Platform.HANDHELD
+        else -> runCatching { Platform.valueOf(value) }.getOrNull()
+    }
 
     private fun JSONObject.optNullableString(key: String): String? =
         if (!has(key) || isNull(key)) null else optString(key).takeIf { it.isNotBlank() }
