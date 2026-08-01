@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.paulrod.shelved.data.model.Game
@@ -157,7 +158,15 @@ private fun FavoriteGames(games: List<Game>) {
         games.forEach { game ->
             Column(Modifier.weight(1f)) {
                 GameCover(game.coverImageUrl, Modifier.fillMaxWidth())
-                Text(game.name, color = TextPrimary, fontSize = 11.sp, maxLines = 2)
+                Text(
+                    game.name,
+                    color = TextPrimary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                )
             }
         }
         repeat(3 - games.size) { Spacer(Modifier.weight(1f)) }
