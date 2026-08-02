@@ -1,10 +1,10 @@
 package com.paulrod.shelved.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.paulrod.shelved.data.OnboardingPreferences
 import com.paulrod.shelved.data.auth.AuthRepository
@@ -24,7 +24,7 @@ fun ShelvedApp() {
             authRepository = authRepository,
         )
     }
-    val onboardingState by onboardingViewModel.uiState.collectAsState()
+    val onboardingState by onboardingViewModel.uiState.collectAsStateWithLifecycle()
 
     if (onboardingState.isCompleted) {
         MainApp(authRepository, authRepository, googleSignInClient, activityContext)

@@ -7,13 +7,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.paulrod.shelved.data.ShelvedRepository
 import com.paulrod.shelved.data.cover.GameCoverImageStore
@@ -41,7 +41,7 @@ internal fun MainApp(
     activityContext: Context,
 ) {
     val appContext = activityContext.applicationContext
-    val repository = remember(appContext) { ShelvedRepository(appContext) }
+    val repository = remember(appContext) { ShelvedRepository.getInstance(appContext) }
     val imageStore = remember(appContext) { ProfileImageStore(appContext) }
     val coverImageStore = remember(appContext) { GameCoverImageStore(appContext) }
     LaunchedEffect(repository, imageStore, coverImageStore) {
@@ -58,7 +58,7 @@ internal fun MainApp(
     val accountViewModel: AccountViewModel = viewModel {
         AccountViewModel(authGateway, sessionProvider)
     }
-    val accountState by accountViewModel.uiState.collectAsState()
+    val accountState by accountViewModel.uiState.collectAsStateWithLifecycle()
 
     if (accountState.isSignInVisible) {
         SignInScreen(
@@ -88,11 +88,11 @@ private fun MainNavigation(
     accountState: AccountUiState,
 ) {
     var destination by rememberSaveable { mutableStateOf(Destination.BACKLOG) }
-    val backlogState by backlogViewModel.uiState.collectAsState()
-    val addSearchState by backlogViewModel.addSearchUiState.collectAsState()
-    val searchState by shelvedViewModel.searchUiState.collectAsState()
-    val profileState by profileViewModel.uiState.collectAsState()
-    val statsState by shelvedViewModel.statsUiState.collectAsState()
+    val backlogState by backlogViewModel.uiState.collectAsStateWithLifecycle()
+    val addSearchState by backlogViewModel.addSearchUiState.collectAsStateWithLifecycle()
+    val searchState by shelvedViewModel.searchUiState.collectAsStateWithLifecycle()
+    val profileState by profileViewModel.uiState.collectAsStateWithLifecycle()
+    val statsState by shelvedViewModel.statsUiState.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = Background,

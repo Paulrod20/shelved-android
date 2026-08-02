@@ -18,16 +18,20 @@ import androidx.compose.material.icons.outlined.Gamepad
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.ui.theme.Accent
 import com.paulrod.shelved.ui.theme.AccentText
@@ -69,7 +73,19 @@ fun GameCover(game: Game, modifier: Modifier = Modifier) {
     ) {
         val model = game.coverModel()
         if (model != null) {
-            AsyncImage(model, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            val context = LocalContext.current
+            val request = remember(context, model) {
+                ImageRequest.Builder(context)
+                    .data(model)
+                    .crossfade(true)
+                    .build()
+            }
+            AsyncImage(
+                model = request,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
         } else {
             Icon(Icons.Outlined.Gamepad, null, tint = TextMuted, modifier = Modifier.size(30.dp))
         }

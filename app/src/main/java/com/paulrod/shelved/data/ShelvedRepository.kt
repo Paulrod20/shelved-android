@@ -1,21 +1,31 @@
 package com.paulrod.shelved.data
 
+import android.annotation.SuppressLint
 import android.content.Context
-import androidx.core.content.edit
+import android.util.Log
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.data.model.GameNote
 import com.paulrod.shelved.data.model.GameStatus
 import com.paulrod.shelved.data.model.Platform
 import com.paulrod.shelved.data.model.Profile
 import com.paulrod.shelved.data.profile.ProfileRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONArray
 import org.json.JSONObject
 
 /** Small, device-local store. The JSON shape is intentionally stable and easy to migrate. */
-class ShelvedRepository(context: Context) : ShelvedDataRepository, ProfileRepository {
+class ShelvedRepository private constructor(context: Context) : ShelvedDataRepository, ProfileRepository {
     private val preferences = context.getSharedPreferences("shelved", Context.MODE_PRIVATE)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val persistence = OrderedWriteQueue<PersistenceWrite>(
+        scope = scope,
+        writer = { persist(it) },
+        onError = { Log.e(TAG, "Could not persist local library data.", it) },
+    )
     private val _games = MutableStateFlow(readGames())
     private val _profile = MutableStateFlow(readProfile())
 
@@ -41,14 +51,28 @@ class ShelvedRepository(context: Context) : ShelvedDataRepository, ProfileReposi
 
     override fun updateProfile(profile: Profile) {
         _profile.value = profile
-        preferences.edit { putString(PROFILE_KEY, profile.toJson().toString()) }
+        persistence.enqueue(PersistenceWrite.ProfileSnapshot(profile))
     }
 
     private fun saveGames(games: List<Game>) {
         _games.value = games
-        preferences.edit {
-            putString(GAMES_KEY, JSONArray().apply { games.forEach { put(it.toJson()) } }.toString())
+        persistence.enqueue(PersistenceWrite.GameSnapshot(games.toList()))
+    }
+
+    @SuppressLint("UseKtx") // The direct API exposes commit success, which the ordered writer must verify.
+    private fun persist(write: PersistenceWrite) {
+        val editor = preferences.edit()
+        when (write) {
+            is PersistenceWrite.GameSnapshot -> editor.putString(
+                GAMES_KEY,
+                JSONArray().apply { write.games.forEach { put(it.toJson()) } }.toString(),
+            )
+            is PersistenceWrite.ProfileSnapshot -> editor.putString(
+                PROFILE_KEY,
+                write.profile.toJson().toString(),
+            )
         }
+        check(editor.commit()) { "SharedPreferences rejected a local data write." }
     }
 
     private fun readGames(): List<Game> = runCatching {
@@ -142,8 +166,21 @@ class ShelvedRepository(context: Context) : ShelvedDataRepository, ProfileReposi
     private fun JSONObject.optNullableString(key: String): String? =
         if (!has(key) || isNull(key)) null else optString(key).takeIf { it.isNotBlank() }
 
-    private companion object {
-        const val GAMES_KEY = "games"
-        const val PROFILE_KEY = "profile"
+    companion object {
+        @Volatile
+        private var instance: ShelvedRepository? = null
+
+        fun getInstance(context: Context): ShelvedRepository = instance ?: synchronized(this) {
+            instance ?: ShelvedRepository(context.applicationContext).also { instance = it }
+        }
+
+        private const val TAG = "ShelvedRepository"
+        private const val GAMES_KEY = "games"
+        private const val PROFILE_KEY = "profile"
     }
+}
+
+private sealed interface PersistenceWrite {
+    data class GameSnapshot(val games: List<Game>) : PersistenceWrite
+    data class ProfileSnapshot(val profile: Profile) : PersistenceWrite
 }
