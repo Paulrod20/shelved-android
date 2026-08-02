@@ -1,10 +1,8 @@
 package com.paulrod.shelved.ui.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,20 +14,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,16 +36,13 @@ import com.paulrod.shelved.data.auth.AuthSession
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.data.model.Platform
 import com.paulrod.shelved.data.model.Profile
-import com.paulrod.shelved.ui.components.FilterPill
+import com.paulrod.shelved.data.profile.ProfileImageSource
 import com.paulrod.shelved.ui.components.GameCover
-import com.paulrod.shelved.ui.components.PrimaryButton
 import com.paulrod.shelved.ui.components.SectionLabel
-import com.paulrod.shelved.ui.components.ShelvedField
 import com.paulrod.shelved.ui.components.ShelvedScreen
 import com.paulrod.shelved.ui.components.ShelvedSheet
 import com.paulrod.shelved.ui.theme.Accent
 import com.paulrod.shelved.ui.theme.AccentText
-import com.paulrod.shelved.ui.theme.Surface
 import com.paulrod.shelved.ui.theme.TextMuted
 import com.paulrod.shelved.ui.theme.TextPrimary
 
@@ -94,8 +83,12 @@ fun ProfileScreen(
 
     if (state.isEditSheetVisible) {
         EditProfileSheet(
-            profile = state.profile,
+            profile = state.profile.copy(profileImagePath = state.editingProfileImagePath),
             games = state.games,
+            isImageLoading = state.isProfileImageLoading,
+            hasImageError = state.hasProfileImageError,
+            onImageSelected = { onAction(ProfileAction.ProfileImageSelected(ProfileImageSource(it.toString()))) },
+            onImageRemoved = { onAction(ProfileAction.ProfileImageRemoved) },
             onClose = { onAction(ProfileAction.EditDismissed) },
             onSave = { onAction(ProfileAction.ProfileSaved(it)) },
         )
@@ -129,17 +122,7 @@ private fun ProfileIdentity(profile: Profile, gameCount: Int) {
         Modifier.fillMaxWidth().padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            Modifier.size(90.dp).clip(CircleShape).background(Surface).border(2.dp, Accent, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                profile.displayName.firstOrNull()?.uppercase() ?: "🎮",
-                color = TextPrimary,
-                fontSize = 34.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+        ProfileAvatar(profile)
         Text(
             profile.displayName.ifBlank { "Add your name" },
             color = TextPrimary,
@@ -221,76 +204,6 @@ private fun FavoriteGames(games: List<Game>) {
                     Spacer(Modifier.weight(1f))
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun EditProfileSheet(
-    profile: Profile,
-    games: List<Game>,
-    onClose: () -> Unit,
-    onSave: (Profile) -> Unit,
-) {
-    var name by remember { mutableStateOf(profile.displayName) }
-    var bio by remember { mutableStateOf(profile.bio) }
-    var platforms by remember { mutableStateOf(profile.favoritePlatforms) }
-    var favorites by remember { mutableStateOf(profile.favoriteGameIds) }
-    ShelvedSheet("Edit Profile", onClose) {
-        SectionLabel("Display name")
-        ShelvedField(name, { name = it }, "Your name")
-        SectionLabel("Bio")
-        ShelvedField(bio, { bio = it }, "A little about your gaming taste…", minLines = 3)
-        SectionLabel("Favorite platforms")
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(Platform.entries) { item ->
-                FilterPill(item.label, item in platforms) {
-                    platforms = if (item in platforms) platforms - item else platforms + item
-                }
-            }
-        }
-        SectionLabel("Favorite games · ${favorites.size}/6")
-        if (games.isEmpty()) {
-            Text("Add games to your shelf first.", color = TextMuted)
-        } else {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(games, key = { it.id }) { game ->
-                    FavoriteGamePickerItem(
-                        game = game,
-                        selected = game.id in favorites,
-                        onClick = {
-                            favorites = when {
-                                game.id in favorites -> favorites - game.id
-                                favorites.size < 6 -> favorites + game.id
-                                else -> favorites
-                            }
-                        },
-                    )
-                }
-            }
-        }
-        PrimaryButton("Save") {
-            onSave(
-                Profile(
-                    displayName = name.trim(),
-                    bio = bio.trim(),
-                    favoritePlatforms = platforms,
-                    favoriteGameIds = favorites,
-                ),
-            )
-        }
-    }
-}
-
-@Composable
-private fun FavoriteGamePickerItem(game: Game, selected: Boolean, onClick: () -> Unit) {
-    Box(Modifier.width(88.dp).clickable(onClick = onClick)) {
-        GameCover(game.coverImageUrl, Modifier.fillMaxWidth())
-        if (selected) {
-            Box(
-                Modifier.align(Alignment.TopEnd).padding(6.dp).size(24.dp).clip(CircleShape).background(Accent),
-                contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Default.Check, null, tint = AccentText, modifier = Modifier.size(16.dp)) }
         }
     }
 }

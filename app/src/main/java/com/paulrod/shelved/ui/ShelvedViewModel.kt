@@ -1,7 +1,6 @@
 package com.paulrod.shelved.ui
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.paulrod.shelved.data.RawgApi
 import com.paulrod.shelved.data.ShelvedRepository
@@ -11,8 +10,6 @@ import com.paulrod.shelved.ui.backlog.BacklogAction
 import com.paulrod.shelved.ui.backlog.BacklogSort
 import com.paulrod.shelved.ui.backlog.BacklogUiState
 import com.paulrod.shelved.ui.backlog.filteredAndSortedGames
-import com.paulrod.shelved.ui.profile.ProfileAction
-import com.paulrod.shelved.ui.profile.ProfileUiState
 import com.paulrod.shelved.ui.search.SearchAction
 import com.paulrod.shelved.ui.search.SearchStatus
 import com.paulrod.shelved.ui.search.SearchUiState
@@ -32,11 +29,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.milliseconds
 
-class ShelvedViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = ShelvedRepository(application)
-    private val api = RawgApi()
+class ShelvedViewModel(
+    private val repository: ShelvedRepository,
+    private val api: RawgApi = RawgApi(),
+) : ViewModel() {
     private val backlogControls = MutableStateFlow(BacklogControls())
-    private val profileControls = MutableStateFlow(ProfileControls())
     private val _searchUiState = MutableStateFlow(SearchUiState())
     private val _addSearchUiState = MutableStateFlow(SearchUiState())
     private var searchJob: Job? = null
@@ -58,20 +55,6 @@ class ShelvedViewModel(application: Application) : AndroidViewModel(application)
             isDeleteConfirmationVisible = controls.isDeleteConfirmationVisible,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BacklogUiState())
-
-    val profileUiState: StateFlow<ProfileUiState> = combine(
-        repository.profile,
-        repository.games,
-        profileControls,
-    ) { profile, games, controls ->
-        ProfileUiState(
-            profile = profile,
-            games = games,
-            favoriteGames = profile.favoriteGameIds.mapNotNull { id -> games.find { it.id == id } },
-            isEditSheetVisible = controls.isEditSheetVisible,
-            isMenuSheetVisible = controls.isMenuSheetVisible,
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProfileUiState())
 
     val statsUiState: StateFlow<StatsUiState> = repository.games
         .map(::buildStatsUiState)
@@ -173,19 +156,6 @@ class ShelvedViewModel(application: Application) : AndroidViewModel(application)
         _addSearchUiState.value = _addSearchUiState.value.copy(selectedGame = game)
     }
 
-    fun onProfileAction(action: ProfileAction) {
-        when (action) {
-            ProfileAction.EditRequested -> profileControls.update { it.copy(isEditSheetVisible = true) }
-            ProfileAction.EditDismissed -> profileControls.update { it.copy(isEditSheetVisible = false) }
-            ProfileAction.MenuRequested -> profileControls.update { it.copy(isMenuSheetVisible = true) }
-            ProfileAction.MenuDismissed -> profileControls.update { it.copy(isMenuSheetVisible = false) }
-            is ProfileAction.ProfileSaved -> {
-                repository.updateProfile(action.profile)
-                profileControls.update { it.copy(isEditSheetVisible = false) }
-            }
-        }
-    }
-
     private fun launchSearch(query: String, destination: MutableStateFlow<SearchUiState>): Job? {
         if (query.isBlank()) {
             destination.value = SearchUiState()
@@ -253,11 +223,6 @@ private data class BacklogControls(
     val selectedGame: Game? = null,
     val selectedGameIds: Set<String> = emptySet(),
     val isDeleteConfirmationVisible: Boolean = false,
-)
-
-private data class ProfileControls(
-    val isEditSheetVisible: Boolean = false,
-    val isMenuSheetVisible: Boolean = false,
 )
 
 private inline fun <T> MutableStateFlow<T>.update(transform: (T) -> T) {

@@ -3,6 +3,7 @@ package com.paulrod.shelved.data.model
 data class Profile(
     val displayName: String = "",
     val bio: String = "",
+    val profileImagePath: String? = null,
     val favoritePlatforms: List<Platform> = emptyList(),
     val favoriteGameIds: List<String> = emptyList(),
 )

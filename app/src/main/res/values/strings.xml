@@ -72,4 +72,12 @@
     <string name="account_sign_out">Sign out</string>
     <string name="account_sign_in">Sign in</string>
     <string name="onboarding_existing_account">Already have an account? Sign in</string>
+
+    <string name="profile_picture_section">Profile picture</string>
+    <string name="profile_picture_description">Profile picture</string>
+    <string name="profile_picture_choose">Choose photo</string>
+    <string name="profile_picture_change">Change photo</string>
+    <string name="profile_picture_remove">Use default</string>
+    <string name="profile_picture_loading">Saving photo…</string>
+    <string name="profile_picture_error">We couldn’t save that photo. Try a different image.</string>
 </resources>

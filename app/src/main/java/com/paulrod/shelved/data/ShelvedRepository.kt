@@ -7,19 +7,20 @@ import com.paulrod.shelved.data.model.GameNote
 import com.paulrod.shelved.data.model.GameStatus
 import com.paulrod.shelved.data.model.Platform
 import com.paulrod.shelved.data.model.Profile
+import com.paulrod.shelved.data.profile.ProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONArray
 import org.json.JSONObject
 
 /** Small, device-local store. The JSON shape is intentionally stable and easy to migrate. */
-class ShelvedRepository(context: Context) {
+class ShelvedRepository(context: Context) : ProfileRepository {
     private val preferences = context.getSharedPreferences("shelved", Context.MODE_PRIVATE)
     private val _games = MutableStateFlow(readGames())
     private val _profile = MutableStateFlow(readProfile())
 
-    val games: StateFlow<List<Game>> = _games
-    val profile: StateFlow<Profile> = _profile
+    override val games: StateFlow<List<Game>> = _games
+    override val profile: StateFlow<Profile> = _profile
 
     fun addGame(game: Game) {
         if (_games.value.any { it.id == game.id }) return
@@ -38,7 +39,7 @@ class ShelvedRepository(context: Context) {
         }
     }
 
-    fun updateProfile(profile: Profile) {
+    override fun updateProfile(profile: Profile) {
         _profile.value = profile
         preferences.edit { putString(PROFILE_KEY, profile.toJson().toString()) }
     }
@@ -104,6 +105,7 @@ class ShelvedRepository(context: Context) {
 
     private fun Profile.toJson() = JSONObject().apply {
         put("displayName", displayName); put("bio", bio)
+        put("profileImagePath", profileImagePath)
         put("favoritePlatforms", JSONArray(favoritePlatforms.map { it.name }))
         put("favoriteGameIds", JSONArray(favoriteGameIds))
     }
@@ -111,6 +113,7 @@ class ShelvedRepository(context: Context) {
     private fun JSONObject.toProfile() = Profile(
         displayName = optString("displayName"),
         bio = optString("bio"),
+        profileImagePath = optNullableString("profileImagePath"),
         favoritePlatforms = readFavoritePlatforms(),
         favoriteGameIds = optJSONArray("favoriteGameIds")?.let { array ->
             List(array.length()) { array.getString(it) }
