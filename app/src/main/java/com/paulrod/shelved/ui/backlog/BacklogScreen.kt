@@ -240,7 +240,7 @@ private fun AddGameSheet(
 private fun EditGameSheet(game: Game, onClose: () -> Unit, onSave: (Game) -> Unit) {
     var status by remember { mutableStateOf(game.status) }
     var hours by remember { mutableStateOf(game.hoursPlayed?.toString().orEmpty()) }
-    var notes by remember { mutableStateOf(game.notes.orEmpty()) }
+    var notes by remember { mutableStateOf(game.notes) }
     ShelvedSheet("Game Details", onClose) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)).background(SurfaceElevated)) {
@@ -252,10 +252,9 @@ private fun EditGameSheet(game: Game, onClose: () -> Unit, onSave: (Game) -> Uni
         StatusPicker(status) { status = it }
         SectionLabel("Hours played")
         ShelvedField(hours, { hours = it.filter(Char::isDigit) }, "0", KeyboardType.Number)
-        SectionLabel("Notes")
-        ShelvedField(notes, { notes = it }, "What do you think so far?", minLines = 3)
+        GameNotesSection(notes = notes, onNotesChange = { notes = it })
         PrimaryButton("Save") {
-            onSave(game.copy(status = status, hoursPlayed = hours.toIntOrNull(), notes = notes.trim().ifBlank { null }))
+            onSave(game.copy(status = status, hoursPlayed = hours.toIntOrNull(), notes = notes))
         }
     }
 }

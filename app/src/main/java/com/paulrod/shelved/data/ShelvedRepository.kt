@@ -2,6 +2,7 @@ package com.paulrod.shelved.data
 
 import android.content.Context
 import com.paulrod.shelved.data.model.Game
+import com.paulrod.shelved.data.model.GameNote
 import com.paulrod.shelved.data.model.GameStatus
 import com.paulrod.shelved.data.model.Platform
 import com.paulrod.shelved.data.model.Profile
@@ -47,7 +48,8 @@ class ShelvedRepository(context: Context) {
 
     private fun Game.toJson() = JSONObject().apply {
         put("id", id); put("name", name); put("coverImageUrl", coverImageUrl)
-        put("status", status.name); put("hoursPlayed", hoursPlayed); put("notes", notes)
+        put("status", status.name); put("hoursPlayed", hoursPlayed)
+        put("notes", JSONArray().apply { notes.forEach { put(it.toJson()) } })
         put("released", released); put("playtime", playtime); put("description", description)
         put("platforms", JSONArray(platforms))
     }
@@ -58,12 +60,34 @@ class ShelvedRepository(context: Context) {
         coverImageUrl = optNullableString("coverImageUrl"),
         status = runCatching { GameStatus.valueOf(optString("status")) }.getOrDefault(GameStatus.BACKLOG),
         hoursPlayed = if (has("hoursPlayed") && !isNull("hoursPlayed")) getInt("hoursPlayed") else null,
-        notes = optNullableString("notes"),
+        notes = readNotes(),
         released = optNullableString("released"),
         playtime = if (has("playtime") && !isNull("playtime")) getInt("playtime") else null,
         platforms = optJSONArray("platforms")?.let { array -> List(array.length()) { array.getString(it) } }.orEmpty(),
         description = optNullableString("description"),
     )
+
+    private fun GameNote.toJson() = JSONObject().apply {
+        put("text", text)
+        put("createdAtEpochMillis", createdAtEpochMillis)
+    }
+
+    private fun JSONObject.readNotes(): List<GameNote> {
+        optJSONArray("notes")?.let { array ->
+            return List(array.length()) { index ->
+                array.getJSONObject(index).let { note ->
+                    GameNote(
+                        text = note.getString("text"),
+                        createdAtEpochMillis = note.optLong("createdAtEpochMillis"),
+                    )
+                }
+            }
+        }
+
+        return listOfNotNull(
+            optNullableString("notes")?.let { GameNote(text = it, createdAtEpochMillis = 0L) },
+        )
+    }
 
     private fun Profile.toJson() = JSONObject().apply {
         put("displayName", displayName); put("bio", bio)

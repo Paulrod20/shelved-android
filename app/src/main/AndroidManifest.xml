@@ -4,6 +4,8 @@
 
     <application
         android:allowBackup="true"
+        android:icon="@mipmap/shelved_icon"
+        android:roundIcon="@mipmap/shelved_icon_round"
         android:label="Shelved"
         android:supportsRtl="true"
         android:theme="@style/Theme.Shelved">
