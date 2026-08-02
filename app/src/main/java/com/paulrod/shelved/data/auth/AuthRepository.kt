@@ -1,38 +1,28 @@
 package com.paulrod.shelved.data.auth
 
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.FirebaseAuthUserCollisionException
-import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.FirebaseNetworkException
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.tasks.await
-
-enum class VerificationDelivery { SENT, REQUIRED, SEND_FAILED }
-
-enum class AuthFailure { WEAK_PASSWORD, ACCOUNT_EXISTS, INVALID_CREDENTIALS, NETWORK, UNKNOWN }
-
-sealed interface EmailAuthResult {
-    data object SignedIn : EmailAuthResult
-
-    data class VerificationRequired(
-        val email: String,
-        val delivery: VerificationDelivery,
-    ) : EmailAuthResult
-}
-
-interface AuthGateway {
-    suspend fun createEmailAccount(email: String, password: String): EmailAuthResult
-    suspend fun signInWithEmail(email: String, password: String): EmailAuthResult
-    suspend fun signInWithGoogle(idToken: String)
-    suspend fun sendPasswordReset(email: String)
-    suspend fun resendVerification()
-    fun signOut()
-}
 
 class AuthRepository(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-) : AuthGateway {
+) : AuthGateway, AuthSessionProvider {
+    override val currentSession: AuthSession
+        get() = auth.currentUser.toAuthSession()
+
+    override val sessions: Flow<AuthSession>
+        get() = callbackFlow {
+            val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+                trySend(firebaseAuth.currentUser.toAuthSession())
+            }
+            auth.addAuthStateListener(listener)
+            awaitClose { auth.removeAuthStateListener(listener) }
+        }.distinctUntilChanged()
+
     override suspend fun createEmailAccount(email: String, password: String): EmailAuthResult {
         val result = auth.createUserWithEmailAndPassword(email, password).await()
         val user = result.user ?: error("Firebase did not return a user.")
@@ -71,10 +61,14 @@ class AuthRepository(
     override fun signOut() = auth.signOut()
 }
 
-internal fun Throwable.authFailure(): AuthFailure = when (this) {
-    is FirebaseAuthWeakPasswordException -> AuthFailure.WEAK_PASSWORD
-    is FirebaseAuthUserCollisionException -> AuthFailure.ACCOUNT_EXISTS
-    is FirebaseAuthInvalidCredentialsException -> AuthFailure.INVALID_CREDENTIALS
-    is FirebaseNetworkException -> AuthFailure.NETWORK
-    else -> AuthFailure.UNKNOWN
-}
+private fun com.google.firebase.auth.FirebaseUser?.toAuthSession(): AuthSession =
+    if (this == null) {
+        AuthSession()
+    } else {
+        AuthSession(
+            userId = uid,
+            email = email,
+            displayName = displayName,
+            isEmailVerified = isEmailVerified,
+        )
+    }

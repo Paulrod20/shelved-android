@@ -39,6 +39,7 @@ fun OnboardingScreen(
     onClearFeedback: () -> Unit,
 ) {
     var page by rememberSaveable { mutableStateOf(OnboardingPage.WELCOME) }
+    var emailMode by rememberSaveable { mutableStateOf(EmailAuthMode.CREATE_ACCOUNT) }
 
     LaunchedEffect(state.verificationEmail) {
         if (state.verificationEmail != null) page = OnboardingPage.VERIFY
@@ -85,12 +86,19 @@ fun OnboardingScreen(
                     onGoogleSignIn = onGoogleSignIn,
                     onEmail = {
                         onClearFeedback()
+                        emailMode = EmailAuthMode.CREATE_ACCOUNT
+                        page = OnboardingPage.EMAIL
+                    },
+                    onExistingAccount = {
+                        onClearFeedback()
+                        emailMode = EmailAuthMode.SIGN_IN
                         page = OnboardingPage.EMAIL
                     },
                     onContinueWithoutAccount = onContinueWithoutAccount,
                 )
                 OnboardingPage.EMAIL -> EmailAuthPage(
                     state = state,
+                    initialMode = emailMode,
                     onCreateAccount = onCreateAccount,
                     onSignIn = onEmailSignIn,
                     onPasswordReset = onPasswordReset,

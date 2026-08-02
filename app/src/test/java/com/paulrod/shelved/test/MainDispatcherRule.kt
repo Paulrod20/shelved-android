@@ -1,4 +1,4 @@
-package com.paulrod.shelved.ui.onboarding
+package com.paulrod.shelved.test
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

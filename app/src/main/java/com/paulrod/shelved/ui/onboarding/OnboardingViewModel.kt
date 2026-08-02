@@ -4,11 +4,15 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.paulrod.shelved.data.OnboardingCompletionStore
-import com.paulrod.shelved.data.auth.AuthFailure
 import com.paulrod.shelved.data.auth.AuthGateway
 import com.paulrod.shelved.data.auth.EmailAuthResult
 import com.paulrod.shelved.data.auth.VerificationDelivery
 import com.paulrod.shelved.data.auth.authFailure
+import com.paulrod.shelved.ui.auth.AuthMessage
+import com.paulrod.shelved.ui.auth.toAuthMessage
+import com.paulrod.shelved.ui.auth.validateCreateAccount
+import com.paulrod.shelved.ui.auth.validateResetEmail
+import com.paulrod.shelved.ui.auth.validateSignIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.CancellationException
@@ -37,7 +41,7 @@ class OnboardingViewModel(
             onSuccess = { completeOnboarding() },
             onError = { error ->
                 if (error is GetCredentialCancellationException) clearLoading()
-                else showError(OnboardingMessage.GOOGLE_SIGN_IN_FAILED)
+                else showError(AuthMessage.GOOGLE_SIGN_IN_FAILED)
             },
         )
     }
@@ -75,7 +79,7 @@ class OnboardingViewModel(
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorMessage = null,
-                    noticeMessage = OnboardingMessage.RESET_EMAIL_SENT,
+                    noticeMessage = AuthMessage.RESET_EMAIL_SENT,
                 )
             },
         )
@@ -88,7 +92,7 @@ class OnboardingViewModel(
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorMessage = null,
-                    noticeMessage = OnboardingMessage.VERIFICATION_EMAIL_SENT,
+                    noticeMessage = AuthMessage.VERIFICATION_EMAIL_SENT,
                     verificationDelivery = VerificationDelivery.SENT,
                 )
             },
@@ -115,7 +119,7 @@ class OnboardingViewModel(
         _uiState.value = _uiState.value.copy(
             isLoading = false,
             errorMessage = if (result.delivery == VerificationDelivery.SEND_FAILED) {
-                OnboardingMessage.VERIFICATION_SEND_FAILED
+                AuthMessage.VERIFICATION_SEND_FAILED
             } else {
                 null
             },
@@ -128,7 +132,7 @@ class OnboardingViewModel(
     private fun <T> launchAuth(
         operation: suspend () -> T,
         onSuccess: (T) -> Unit,
-        onError: (Throwable) -> Unit = { showError(it.authFailure().toOnboardingMessage()) },
+        onError: (Throwable) -> Unit = { showError(it.authFailure().toAuthMessage()) },
     ) {
         if (_uiState.value.isLoading) return
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, noticeMessage = null)
@@ -143,19 +147,11 @@ class OnboardingViewModel(
         }
     }
 
-    private fun showError(message: OnboardingMessage) {
+    private fun showError(message: AuthMessage) {
         _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = message, noticeMessage = null)
     }
 
     private fun clearLoading() {
         _uiState.value = _uiState.value.copy(isLoading = false)
     }
-}
-
-private fun AuthFailure.toOnboardingMessage(): OnboardingMessage = when (this) {
-    AuthFailure.WEAK_PASSWORD -> OnboardingMessage.WEAK_PASSWORD
-    AuthFailure.ACCOUNT_EXISTS -> OnboardingMessage.ACCOUNT_EXISTS
-    AuthFailure.INVALID_CREDENTIALS -> OnboardingMessage.INVALID_CREDENTIALS
-    AuthFailure.NETWORK -> OnboardingMessage.NETWORK
-    AuthFailure.UNKNOWN -> OnboardingMessage.AUTH_UNKNOWN
 }

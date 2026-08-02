@@ -5,6 +5,8 @@ import com.paulrod.shelved.data.OnboardingCompletionStore
 import com.paulrod.shelved.data.auth.AuthGateway
 import com.paulrod.shelved.data.auth.EmailAuthResult
 import com.paulrod.shelved.data.auth.VerificationDelivery
+import com.paulrod.shelved.ui.auth.AuthMessage
+import com.paulrod.shelved.test.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -74,7 +76,7 @@ class OnboardingViewModelTest {
         assertFalse(state.isCompleted)
         assertEquals("player@example.com", state.verificationEmail)
         assertEquals(VerificationDelivery.SEND_FAILED, state.verificationDelivery)
-        assertEquals(OnboardingMessage.VERIFICATION_SEND_FAILED, state.errorMessage)
+        assertEquals(AuthMessage.VERIFICATION_SEND_FAILED, state.errorMessage)
     }
 
     @Test
@@ -84,7 +86,7 @@ class OnboardingViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals(VerificationDelivery.SENT, state.verificationDelivery)
-        assertEquals(OnboardingMessage.VERIFICATION_EMAIL_SENT, state.noticeMessage)
+        assertEquals(AuthMessage.VERIFICATION_EMAIL_SENT, state.noticeMessage)
         assertFalse(state.isLoading)
     }
 

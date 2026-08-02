@@ -38,6 +38,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.paulrod.shelved.R
+import com.paulrod.shelved.data.auth.AuthSession
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.data.model.Platform
 import com.paulrod.shelved.data.model.Profile
@@ -55,7 +58,13 @@ import com.paulrod.shelved.ui.theme.TextMuted
 import com.paulrod.shelved.ui.theme.TextPrimary
 
 @Composable
-fun ProfileScreen(state: ProfileUiState, onAction: (ProfileAction) -> Unit) {
+fun ProfileScreen(
+    state: ProfileUiState,
+    accountSession: AuthSession,
+    onAction: (ProfileAction) -> Unit,
+    onSignIn: () -> Unit,
+    onSignOut: () -> Unit,
+) {
     ShelvedScreen("Profile", actions = {
         Row {
             HeaderButton(Icons.Default.Edit, "Edit") { onAction(ProfileAction.EditRequested) }
@@ -75,6 +84,10 @@ fun ProfileScreen(state: ProfileUiState, onAction: (ProfileAction) -> Unit) {
                 item { ProfileText("", "Pick up to six favorites in Edit.") }
             } else {
                 item { FavoriteGames(state.favoriteGames) }
+            }
+            item {
+                SectionLabel(stringResource(R.string.account_section))
+                ProfileAccountCard(accountSession, onSignIn, onSignOut)
             }
         }
     }
