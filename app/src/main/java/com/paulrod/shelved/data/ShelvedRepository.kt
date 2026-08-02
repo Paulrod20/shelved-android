@@ -27,6 +27,16 @@ class ShelvedRepository(context: Context) {
 
     fun updateGame(game: Game) = saveGames(_games.value.map { if (it.id == game.id) game else it })
 
+    fun deleteGames(gameIds: Set<String>) {
+        if (gameIds.isEmpty()) return
+        saveGames(_games.value.filterNot { it.id in gameIds })
+
+        val updatedFavoriteIds = _profile.value.favoriteGameIds.filterNot { it in gameIds }
+        if (updatedFavoriteIds != _profile.value.favoriteGameIds) {
+            updateProfile(_profile.value.copy(favoriteGameIds = updatedFavoriteIds))
+        }
+    }
+
     fun updateProfile(profile: Profile) {
         _profile.value = profile
         preferences.edit().putString(PROFILE_KEY, profile.toJson().toString()).apply()

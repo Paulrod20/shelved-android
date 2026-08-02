@@ -53,6 +53,8 @@ class ShelvedViewModel(application: Application) : AndroidViewModel(application)
             isSortSheetVisible = controls.isSortSheetVisible,
             isAddSheetVisible = controls.isAddSheetVisible,
             selectedGame = controls.selectedGame,
+            selectedGameIds = controls.selectedGameIds,
+            isDeleteConfirmationVisible = controls.isDeleteConfirmationVisible,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BacklogUiState())
 
@@ -111,6 +113,32 @@ class ShelvedViewModel(application: Application) : AndroidViewModel(application)
             is BacklogAction.GameSaved -> {
                 repository.updateGame(action.game)
                 backlogControls.update { it.copy(selectedGame = null) }
+            }
+            is BacklogAction.GameLongPressed -> backlogControls.update {
+                it.copy(selectedGameIds = it.selectedGameIds + action.gameId)
+            }
+            is BacklogAction.GameSelectionToggled -> backlogControls.update {
+                val selectedIds = if (action.gameId in it.selectedGameIds) {
+                    it.selectedGameIds - action.gameId
+                } else {
+                    it.selectedGameIds + action.gameId
+                }
+                it.copy(selectedGameIds = selectedIds)
+            }
+            BacklogAction.SelectionCleared -> backlogControls.update {
+                it.copy(selectedGameIds = emptySet(), isDeleteConfirmationVisible = false)
+            }
+            BacklogAction.DeleteRequested -> backlogControls.update {
+                if (it.selectedGameIds.isEmpty()) it else it.copy(isDeleteConfirmationVisible = true)
+            }
+            BacklogAction.DeleteDismissed -> backlogControls.update {
+                it.copy(isDeleteConfirmationVisible = false)
+            }
+            BacklogAction.DeleteConfirmed -> {
+                repository.deleteGames(backlogControls.value.selectedGameIds)
+                backlogControls.update {
+                    it.copy(selectedGameIds = emptySet(), isDeleteConfirmationVisible = false)
+                }
             }
         }
     }
@@ -226,6 +254,8 @@ private data class BacklogControls(
     val isSortSheetVisible: Boolean = false,
     val isAddSheetVisible: Boolean = false,
     val selectedGame: Game? = null,
+    val selectedGameIds: Set<String> = emptySet(),
+    val isDeleteConfirmationVisible: Boolean = false,
 )
 
 private data class ProfileControls(
