@@ -1,6 +1,7 @@
 package com.paulrod.shelved.data
 
 import android.content.Context
+import androidx.core.content.edit
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.data.model.GameNote
 import com.paulrod.shelved.data.model.GameStatus
@@ -39,12 +40,14 @@ class ShelvedRepository(context: Context) {
 
     fun updateProfile(profile: Profile) {
         _profile.value = profile
-        preferences.edit().putString(PROFILE_KEY, profile.toJson().toString()).apply()
+        preferences.edit { putString(PROFILE_KEY, profile.toJson().toString()) }
     }
 
     private fun saveGames(games: List<Game>) {
         _games.value = games
-        preferences.edit().putString(GAMES_KEY, JSONArray().apply { games.forEach { put(it.toJson()) } }.toString()).apply()
+        preferences.edit {
+            putString(GAMES_KEY, JSONArray().apply { games.forEach { put(it.toJson()) } }.toString())
+        }
     }
 
     private fun readGames(): List<Game> = runCatching {

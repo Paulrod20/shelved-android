@@ -6,7 +6,7 @@
         android:allowBackup="true"
         android:icon="@mipmap/shelved_icon"
         android:roundIcon="@mipmap/shelved_icon_round"
-        android:label="Shelved"
+        android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Shelved">
         <activity
