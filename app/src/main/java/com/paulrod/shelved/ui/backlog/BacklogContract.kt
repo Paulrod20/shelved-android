@@ -19,6 +19,8 @@ data class BacklogUiState(
     val isSortSheetVisible: Boolean = false,
     val isAddSheetVisible: Boolean = false,
     val selectedGame: Game? = null,
+    val selectedGameIds: Set<String> = emptySet(),
+    val isDeleteConfirmationVisible: Boolean = false,
 )
 
 sealed interface BacklogAction {
@@ -34,6 +36,12 @@ sealed interface BacklogAction {
     data object GameDismissed : BacklogAction
     data class GameAdded(val game: Game) : BacklogAction
     data class GameSaved(val game: Game) : BacklogAction
+    data class GameLongPressed(val gameId: String) : BacklogAction
+    data class GameSelectionToggled(val gameId: String) : BacklogAction
+    data object SelectionCleared : BacklogAction
+    data object DeleteRequested : BacklogAction
+    data object DeleteDismissed : BacklogAction
+    data object DeleteConfirmed : BacklogAction
 }
 
 internal fun filteredAndSortedGames(

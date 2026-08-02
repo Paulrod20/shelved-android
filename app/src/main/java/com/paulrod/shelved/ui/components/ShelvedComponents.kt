@@ -1,7 +1,9 @@
 package com.paulrod.shelved.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Gamepad
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
@@ -116,12 +119,33 @@ fun StatusPicker(selected: GameStatus, onSelect: (GameStatus) -> Unit) {
 }
 
 @Composable
-fun GameCard(game: Game, onClick: () -> Unit) {
-    Column(Modifier.clickable(onClick = onClick)) {
-        GameCover(game.coverImageUrl, Modifier.fillMaxWidth())
+fun GameCard(
+    game: Game,
+    selected: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
+    onClick: () -> Unit,
+) {
+    Column(Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)) {
+        Box(Modifier.fillMaxWidth().height(148.dp)) {
+            GameCover(game.coverImageUrl, Modifier.fillMaxSize())
+            if (selected) {
+                Box(
+                    Modifier.fillMaxSize().clip(RoundedCornerShape(11.dp))
+                        .background(Accent.copy(alpha = .2f))
+                        .border(2.dp, Accent, RoundedCornerShape(11.dp)),
+                )
+                Box(
+                    Modifier.align(Alignment.TopEnd).padding(7.dp).size(24.dp)
+                        .clip(RoundedCornerShape(8.dp)).background(Accent),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Default.Check, "Selected", tint = AccentText, modifier = Modifier.size(17.dp))
+                }
+            }
+        }
         Text(
             game.name,
-            color = TextPrimary,
+            color = if (selected) Accent else TextPrimary,
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,

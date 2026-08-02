@@ -1,5 +1,6 @@
 package com.paulrod.shelved.ui.backlog
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,14 +27,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -81,23 +87,45 @@ fun BacklogScreen(
     onAddSearchQueryChanged: (String) -> Unit,
     onAddSearchGameSelected: (Game?) -> Unit,
 ) {
-    ShelvedScreen("SHELVED", actions = {
-        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            HeaderAction(Icons.Default.Search, "Search your backlog", state.isSearchVisible) {
-                onAction(BacklogAction.ToggleSearch)
+    val isSelecting = state.selectedGameIds.isNotEmpty()
+    BackHandler(enabled = isSelecting) { onAction(BacklogAction.SelectionCleared) }
+
+    ShelvedScreen(if (isSelecting) "${state.selectedGameIds.size} SELECTED" else "SHELVED", actions = {
+        if (isSelecting) {
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                HeaderAction(Icons.Default.Close, "Clear selection", false) {
+                    onAction(BacklogAction.SelectionCleared)
+                }
+                IconButton(
+                    onClick = { onAction(BacklogAction.DeleteRequested) },
+                    modifier = Modifier.size(40.dp),
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        "Delete selected games",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(21.dp),
+                    )
+                }
             }
-            HeaderAction(
-                Icons.AutoMirrored.Filled.Sort,
-                "Sort backlog",
-                state.sortOrder != BacklogSort.RECENTLY_ADDED,
-            ) { onAction(BacklogAction.SortRequested) }
-            FloatingActionButton(
-                onClick = { onAction(BacklogAction.AddRequested) },
-                modifier = Modifier.size(40.dp),
-                containerColor = Accent,
-                contentColor = AccentText,
-                shape = CircleShape,
-            ) { Icon(Icons.Default.Add, "Add game") }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                HeaderAction(Icons.Default.Search, "Search your backlog", state.isSearchVisible) {
+                    onAction(BacklogAction.ToggleSearch)
+                }
+                HeaderAction(
+                    Icons.AutoMirrored.Filled.Sort,
+                    "Sort backlog",
+                    state.sortOrder != BacklogSort.RECENTLY_ADDED,
+                ) { onAction(BacklogAction.SortRequested) }
+                FloatingActionButton(
+                    onClick = { onAction(BacklogAction.AddRequested) },
+                    modifier = Modifier.size(40.dp),
+                    containerColor = Accent,
+                    contentColor = AccentText,
+                    shape = CircleShape,
+                ) { Icon(Icons.Default.Add, "Add game") }
+            }
         }
     }) {
         if (state.isSearchVisible) {
@@ -107,9 +135,17 @@ fun BacklogScreen(
         }
         StatusFilters(state.statusFilter) { onAction(BacklogAction.StatusSelected(it)) }
         when {
-            state.visibleGames.isNotEmpty() -> GameGrid(state.visibleGames) {
-                onAction(BacklogAction.GameSelected(it))
-            }
+            state.visibleGames.isNotEmpty() -> GameGrid(
+                games = state.visibleGames,
+                selectedGameIds = state.selectedGameIds,
+                onSelect = { game ->
+                    onAction(
+                        if (isSelecting) BacklogAction.GameSelectionToggled(game.id)
+                        else BacklogAction.GameSelected(game),
+                    )
+                },
+                onLongPress = { onAction(BacklogAction.GameLongPressed(it.id)) },
+            )
             state.searchQuery.isNotBlank() -> NoBacklogMatches(state.searchQuery, Modifier.fillMaxSize())
             else -> EmptyLibrary(state.statusFilter == null, Modifier.fillMaxSize()) {
                 onAction(BacklogAction.AddRequested)
@@ -140,6 +176,13 @@ fun BacklogScreen(
             onSave = { onAction(BacklogAction.GameSaved(it)) },
         )
     }
+    if (state.isDeleteConfirmationVisible) {
+        DeleteGamesDialog(
+            gameCount = state.selectedGameIds.size,
+            onDismiss = { onAction(BacklogAction.DeleteDismissed) },
+            onConfirm = { onAction(BacklogAction.DeleteConfirmed) },
+        )
+    }
 }
 
 @Composable
@@ -161,16 +204,45 @@ private fun StatusFilters(selected: GameStatus?, onSelect: (GameStatus?) -> Unit
 }
 
 @Composable
-private fun GameGrid(games: List<Game>, onSelect: (Game) -> Unit) {
+private fun GameGrid(
+    games: List<Game>,
+    selectedGameIds: Set<String>,
+    onSelect: (Game) -> Unit,
+    onLongPress: (Game) -> Unit,
+) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         modifier = Modifier.fillMaxSize(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        items(games, key = { it.id }) { game -> GameCard(game) { onSelect(game) } }
+        items(games, key = { it.id }) { game ->
+            GameCard(
+                game = game,
+                selected = game.id in selectedGameIds,
+                onLongClick = { onLongPress(game) },
+                onClick = { onSelect(game) },
+            )
+        }
         item(span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(8.dp)) }
     }
+}
+
+@Composable
+private fun DeleteGamesDialog(gameCount: Int, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    val noun = if (gameCount == 1) "game" else "games"
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) },
+        title = { Text("Delete $gameCount $noun?") },
+        text = { Text("This will remove the selected $noun from Shelved. This can’t be undone.") },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Delete", color = MaterialTheme.colorScheme.error)
+            }
+        },
+    )
 }
 
 @Composable
