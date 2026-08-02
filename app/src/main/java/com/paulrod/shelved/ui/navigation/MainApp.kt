@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.paulrod.shelved.data.ShelvedRepository
+import com.paulrod.shelved.data.cover.GameCoverImageStore
 import com.paulrod.shelved.data.auth.AuthGateway
 import com.paulrod.shelved.data.auth.AuthSessionProvider
 import com.paulrod.shelved.data.auth.GoogleSignInClient
@@ -24,6 +26,7 @@ import com.paulrod.shelved.ui.account.AccountViewModel
 import com.paulrod.shelved.ui.account.AccountUiState
 import com.paulrod.shelved.ui.account.SignInScreen
 import com.paulrod.shelved.ui.backlog.BacklogScreen
+import com.paulrod.shelved.ui.backlog.BacklogViewModel
 import com.paulrod.shelved.ui.profile.ProfileScreen
 import com.paulrod.shelved.ui.profile.ProfileViewModel
 import com.paulrod.shelved.ui.search.SearchScreen
@@ -40,7 +43,15 @@ internal fun MainApp(
     val appContext = activityContext.applicationContext
     val repository = remember(appContext) { ShelvedRepository(appContext) }
     val imageStore = remember(appContext) { ProfileImageStore(appContext) }
+    val coverImageStore = remember(appContext) { GameCoverImageStore(appContext) }
+    LaunchedEffect(repository, imageStore, coverImageStore) {
+        imageStore.prune(setOfNotNull(repository.profile.value.profileImagePath))
+        coverImageStore.prune(repository.games.value.mapNotNullTo(mutableSetOf()) { it.customCoverImagePath })
+    }
     val shelvedViewModel: ShelvedViewModel = viewModel { ShelvedViewModel(repository) }
+    val backlogViewModel: BacklogViewModel = viewModel {
+        BacklogViewModel(repository, coverImageStore)
+    }
     val profileViewModel: ProfileViewModel = viewModel {
         ProfileViewModel(repository, imageStore)
     }
@@ -65,19 +76,20 @@ internal fun MainApp(
         return
     }
 
-    MainNavigation(shelvedViewModel, profileViewModel, accountViewModel, accountState)
+    MainNavigation(shelvedViewModel, backlogViewModel, profileViewModel, accountViewModel, accountState)
 }
 
 @Composable
 private fun MainNavigation(
     shelvedViewModel: ShelvedViewModel,
+    backlogViewModel: BacklogViewModel,
     profileViewModel: ProfileViewModel,
     accountViewModel: AccountViewModel,
     accountState: AccountUiState,
 ) {
     var destination by rememberSaveable { mutableStateOf(Destination.BACKLOG) }
-    val backlogState by shelvedViewModel.backlogUiState.collectAsState()
-    val addSearchState by shelvedViewModel.addSearchUiState.collectAsState()
+    val backlogState by backlogViewModel.uiState.collectAsState()
+    val addSearchState by backlogViewModel.addSearchUiState.collectAsState()
     val searchState by shelvedViewModel.searchUiState.collectAsState()
     val profileState by profileViewModel.uiState.collectAsState()
     val statsState by shelvedViewModel.statsUiState.collectAsState()
@@ -91,9 +103,9 @@ private fun MainNavigation(
                 Destination.BACKLOG -> BacklogScreen(
                     state = backlogState,
                     addSearchState = addSearchState,
-                    onAction = shelvedViewModel::onBacklogAction,
-                    onAddSearchQueryChanged = shelvedViewModel::onAddSearchQueryChanged,
-                    onAddSearchGameSelected = shelvedViewModel::onAddSearchGameSelected,
+                    onAction = backlogViewModel::onAction,
+                    onAddSearchQueryChanged = backlogViewModel::onAddSearchQueryChanged,
+                    onAddSearchGameSelected = backlogViewModel::onAddSearchGameSelected,
                 )
                 Destination.SEARCH -> SearchScreen(
                     state = searchState,

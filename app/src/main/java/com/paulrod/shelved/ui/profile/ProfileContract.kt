@@ -2,7 +2,7 @@ package com.paulrod.shelved.ui.profile
 
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.data.model.Profile
-import com.paulrod.shelved.data.profile.ProfileImageSource
+import com.paulrod.shelved.data.image.LocalImageSource
 
 data class ProfileUiState(
     val profile: Profile = Profile(),
@@ -20,7 +20,7 @@ sealed interface ProfileAction {
     data object EditDismissed : ProfileAction
     data object MenuRequested : ProfileAction
     data object MenuDismissed : ProfileAction
-    data class ProfileImageSelected(val source: ProfileImageSource) : ProfileAction
+    data class ProfileImageSelected(val source: LocalImageSource) : ProfileAction
     data object ProfileImageRemoved : ProfileAction
     data class ProfileSaved(val profile: Profile) : ProfileAction
 }

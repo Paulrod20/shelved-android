@@ -2,7 +2,7 @@ package com.paulrod.shelved.ui.profile
 
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.data.model.Profile
-import com.paulrod.shelved.data.profile.ProfileImageSource
+import com.paulrod.shelved.data.image.LocalImageSource
 import com.paulrod.shelved.data.profile.ProfileImageStorage
 import com.paulrod.shelved.data.profile.ProfileRepository
 import com.paulrod.shelved.test.MainDispatcherRule
@@ -45,20 +45,20 @@ class ProfileViewModelTest {
     fun selectingImageCreatesDraftWithoutChangingSavedProfile() = runTest {
         observeState()
         viewModel.onAction(ProfileAction.EditRequested)
-        viewModel.onAction(ProfileAction.ProfileImageSelected(ProfileImageSource("content://avatar")))
+        viewModel.onAction(ProfileAction.ProfileImageSelected(LocalImageSource("content://avatar")))
         advanceUntilIdle()
 
         assertEquals(OLD_IMAGE, repository.profile.value.profileImagePath)
         assertEquals(NEW_IMAGE, viewModel.uiState.value.editingProfileImagePath)
         assertTrue(viewModel.uiState.value.isEditSheetVisible)
-        assertEquals(listOf(ProfileImageSource("content://avatar")), imageStorage.savedSources)
+        assertEquals(listOf(LocalImageSource("content://avatar")), imageStorage.savedSources)
     }
 
     @Test
     fun saveCommitsDraftAndRemovesPreviousImage() = runTest {
         observeState()
         viewModel.onAction(ProfileAction.EditRequested)
-        viewModel.onAction(ProfileAction.ProfileImageSelected(ProfileImageSource("content://avatar")))
+        viewModel.onAction(ProfileAction.ProfileImageSelected(LocalImageSource("content://avatar")))
         advanceUntilIdle()
 
         viewModel.onAction(
@@ -78,7 +78,7 @@ class ProfileViewModelTest {
     fun dismissDiscardsDraftAndKeepsSavedProfile() = runTest {
         observeState()
         viewModel.onAction(ProfileAction.EditRequested)
-        viewModel.onAction(ProfileAction.ProfileImageSelected(ProfileImageSource("content://avatar")))
+        viewModel.onAction(ProfileAction.ProfileImageSelected(LocalImageSource("content://avatar")))
         advanceUntilIdle()
 
         viewModel.onAction(ProfileAction.EditDismissed)
@@ -133,10 +133,10 @@ private class FakeProfileRepository(initialProfile: Profile) : ProfileRepository
 }
 
 private class FakeProfileImageStorage : ProfileImageStorage {
-    val savedSources = mutableListOf<ProfileImageSource>()
+    val savedSources = mutableListOf<LocalImageSource>()
     val removedPaths = mutableListOf<String>()
 
-    override suspend fun save(source: ProfileImageSource): String {
+    override suspend fun save(source: LocalImageSource): String {
         savedSources += source
         return "/profile_images/new.jpg"
     }
@@ -144,4 +144,6 @@ private class FakeProfileImageStorage : ProfileImageStorage {
     override suspend fun remove(path: String?) {
         path?.let(removedPaths::add)
     }
+
+    override suspend fun prune(referencedPaths: Set<String>) = Unit
 }

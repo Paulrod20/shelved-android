@@ -2,6 +2,7 @@ package com.paulrod.shelved.ui.backlog
 
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.data.model.GameStatus
+import com.paulrod.shelved.data.cover.CoverCropRequest
 
 enum class BacklogSort(val label: String) {
     RECENTLY_ADDED("Recently added"),
@@ -21,6 +22,8 @@ data class BacklogUiState(
     val selectedGame: Game? = null,
     val selectedGameIds: Set<String> = emptySet(),
     val isDeleteConfirmationVisible: Boolean = false,
+    val isCoverImageLoading: Boolean = false,
+    val hasCoverImageError: Boolean = false,
 )
 
 sealed interface BacklogAction {
@@ -36,6 +39,8 @@ sealed interface BacklogAction {
     data object GameDismissed : BacklogAction
     data class GameAdded(val game: Game) : BacklogAction
     data class GameSaved(val game: Game) : BacklogAction
+    data class CoverCropConfirmed(val request: CoverCropRequest) : BacklogAction
+    data object CustomCoverRemoved : BacklogAction
     data class GameLongPressed(val gameId: String) : BacklogAction
     data class GameSelectionToggled(val gameId: String) : BacklogAction
     data object SelectionCleared : BacklogAction

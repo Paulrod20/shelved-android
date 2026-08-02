@@ -184,7 +184,7 @@ private fun ProfileImageEditor(
 @Composable
 private fun FavoriteGamePickerItem(game: Game, selected: Boolean, onClick: () -> Unit) {
     Box(Modifier.width(88.dp).clickable(onClick = onClick)) {
-        GameCover(game.coverImageUrl, Modifier.fillMaxWidth())
+        GameCover(game, Modifier.fillMaxWidth())
         if (selected) {
             Box(
                 Modifier.align(Alignment.TopEnd).padding(6.dp).size(24.dp).clip(CircleShape).background(Accent),

@@ -74,7 +74,7 @@ fun SearchResultRow(game: Game, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(54.dp).clip(RoundedCornerShape(9.dp)).background(SurfaceElevated)) {
-            game.coverImageUrl?.let { AsyncImage(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
+            game.coverModel()?.let { AsyncImage(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
         }
         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
             Text(game.name, color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 2)
@@ -101,7 +101,7 @@ fun CatalogGameSheet(
             Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState()),
         ) {
             Row(Modifier.fillMaxWidth()) {
-                GameCover(game.coverImageUrl, Modifier.weight(.36f))
+                GameCover(game, Modifier.weight(.36f))
                 Column(Modifier.weight(.64f).padding(start = 16.dp)) {
                     Text(game.name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     game.released?.take(4)?.let { Text(it, color = TextMuted, modifier = Modifier.padding(top = 4.dp)) }

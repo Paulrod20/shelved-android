@@ -32,6 +32,7 @@ import coil3.compose.AsyncImage
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.data.model.GameStatus
 import com.paulrod.shelved.ui.components.label
+import com.paulrod.shelved.ui.components.coverModel
 import com.paulrod.shelved.ui.theme.Accent
 import com.paulrod.shelved.ui.theme.Border
 import com.paulrod.shelved.ui.theme.Surface
@@ -193,8 +194,9 @@ private fun GameThumbnail(game: Game) {
         Modifier.size(width = 46.dp, height = 64.dp).clip(RoundedCornerShape(9.dp)).background(SurfaceElevated),
         contentAlignment = Alignment.Center,
     ) {
-        if (game.coverImageUrl != null) {
-            AsyncImage(game.coverImageUrl, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+        val model = game.coverModel()
+        if (model != null) {
+            AsyncImage(model, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         } else {
             Icon(Icons.Outlined.Gamepad, null, tint = TextMuted, modifier = Modifier.size(22.dp))
         }

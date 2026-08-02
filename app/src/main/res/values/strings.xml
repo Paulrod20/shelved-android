@@ -80,4 +80,15 @@
     <string name="profile_picture_remove">Use default</string>
     <string name="profile_picture_loading">Saving photo…</string>
     <string name="profile_picture_error">We couldn’t save that photo. Try a different image.</string>
+
+    <string name="cover_art_section">Cover art</string>
+    <string name="cover_art_choose">Choose new cover</string>
+    <string name="cover_art_change">Change cover</string>
+    <string name="cover_art_use_original">Use original</string>
+    <string name="cover_art_save_error">Couldn’t use that image. Try a common image format up to 50 MB.</string>
+    <string name="cover_crop_title">Center cover art</string>
+    <string name="cover_crop_instructions">Drag to reposition and pinch or use the slider to zoom.</string>
+    <string name="cover_crop_description">Selected game cover</string>
+    <string name="cover_crop_open_error">This image could not be opened. Choose a different image.</string>
+    <string name="cover_crop_confirm">Use this cover</string>
 </resources>

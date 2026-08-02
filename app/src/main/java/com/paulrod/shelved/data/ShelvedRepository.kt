@@ -14,7 +14,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** Small, device-local store. The JSON shape is intentionally stable and easy to migrate. */
-class ShelvedRepository(context: Context) : ProfileRepository {
+class ShelvedRepository(context: Context) : ShelvedDataRepository, ProfileRepository {
     private val preferences = context.getSharedPreferences("shelved", Context.MODE_PRIVATE)
     private val _games = MutableStateFlow(readGames())
     private val _profile = MutableStateFlow(readProfile())
@@ -22,14 +22,14 @@ class ShelvedRepository(context: Context) : ProfileRepository {
     override val games: StateFlow<List<Game>> = _games
     override val profile: StateFlow<Profile> = _profile
 
-    fun addGame(game: Game) {
+    override fun addGame(game: Game) {
         if (_games.value.any { it.id == game.id }) return
         saveGames(listOf(game) + _games.value)
     }
 
-    fun updateGame(game: Game) = saveGames(_games.value.map { if (it.id == game.id) game else it })
+    override fun updateGame(game: Game) = saveGames(_games.value.map { if (it.id == game.id) game else it })
 
-    fun deleteGames(gameIds: Set<String>) {
+    override fun deleteGames(gameIds: Set<String>) {
         if (gameIds.isEmpty()) return
         saveGames(_games.value.filterNot { it.id in gameIds })
 
@@ -62,6 +62,7 @@ class ShelvedRepository(context: Context) : ProfileRepository {
 
     private fun Game.toJson() = JSONObject().apply {
         put("id", id); put("name", name); put("coverImageUrl", coverImageUrl)
+        put("customCoverImagePath", customCoverImagePath)
         put("status", status.name); put("hoursPlayed", hoursPlayed)
         put("notes", JSONArray().apply { notes.forEach { put(it.toJson()) } })
         put("released", released); put("playtime", playtime); put("description", description)
@@ -72,6 +73,7 @@ class ShelvedRepository(context: Context) : ProfileRepository {
         id = getString("id"),
         name = getString("name"),
         coverImageUrl = optNullableString("coverImageUrl"),
+        customCoverImagePath = optNullableString("customCoverImagePath"),
         status = runCatching { GameStatus.valueOf(optString("status")) }.getOrDefault(GameStatus.BACKLOG),
         hoursPlayed = if (has("hoursPlayed") && !isNull("hoursPlayed")) getInt("hoursPlayed") else null,
         notes = readNotes(),

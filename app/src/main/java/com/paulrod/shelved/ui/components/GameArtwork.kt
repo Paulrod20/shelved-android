@@ -34,6 +34,7 @@ import com.paulrod.shelved.ui.theme.AccentText
 import com.paulrod.shelved.ui.theme.SurfaceElevated
 import com.paulrod.shelved.ui.theme.TextMuted
 import com.paulrod.shelved.ui.theme.TextPrimary
+import java.io.File
 
 @Composable
 fun GameCard(
@@ -44,7 +45,7 @@ fun GameCard(
 ) {
     Column(Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)) {
         Box(Modifier.fillMaxWidth().height(148.dp)) {
-            GameCover(game.coverImageUrl, Modifier.fillMaxSize())
+            GameCover(game, Modifier.fillMaxSize())
             if (selected) SelectionOverlay()
         }
         Text(
@@ -61,18 +62,21 @@ fun GameCard(
 }
 
 @Composable
-fun GameCover(url: String?, modifier: Modifier = Modifier) {
+fun GameCover(game: Game, modifier: Modifier = Modifier) {
     Box(
         modifier.clip(RoundedCornerShape(11.dp)).background(SurfaceElevated).height(148.dp),
         contentAlignment = Alignment.Center,
     ) {
-        if (url != null) {
-            AsyncImage(url, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+        val model = game.coverModel()
+        if (model != null) {
+            AsyncImage(model, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         } else {
             Icon(Icons.Outlined.Gamepad, null, tint = TextMuted, modifier = Modifier.size(30.dp))
         }
     }
 }
+
+internal fun Game.coverModel(): Any? = customCoverImagePath?.let(::File) ?: coverImageUrl
 
 @Composable
 private fun BoxScope.SelectionOverlay() {

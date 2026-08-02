@@ -2,7 +2,7 @@ package com.paulrod.shelved.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.paulrod.shelved.data.profile.ProfileImageSource
+import com.paulrod.shelved.data.image.LocalImageSource
 import com.paulrod.shelved.data.profile.ProfileImageStorage
 import com.paulrod.shelved.data.profile.ProfileRepository
 import kotlinx.coroutines.CancellationException
@@ -54,7 +54,7 @@ class ProfileViewModel(
         }
     }
 
-    private fun updateProfileImage(source: ProfileImageSource) {
+    private fun updateProfileImage(source: LocalImageSource) {
         if (controls.value.isProfileImageLoading) return
         controls.update { it.copy(isProfileImageLoading = true, hasProfileImageError = false) }
 

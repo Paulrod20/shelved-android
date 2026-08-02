@@ -1,5 +1,8 @@
 package com.paulrod.shelved.ui.backlog
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -17,6 +20,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,13 +30,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.paulrod.shelved.R
+import com.paulrod.shelved.data.cover.CoverCropRequest
+import com.paulrod.shelved.data.image.LocalImageSource
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.ui.components.CatalogGameSheet
+import com.paulrod.shelved.ui.components.GameCover
+import com.paulrod.shelved.ui.components.coverModel
 import com.paulrod.shelved.ui.components.PrimaryButton
 import com.paulrod.shelved.ui.components.SearchField
 import com.paulrod.shelved.ui.components.SearchResultRow
@@ -102,14 +112,28 @@ internal fun AddGameSheet(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun EditGameSheet(game: Game, onClose: () -> Unit, onSave: (Game) -> Unit) {
+internal fun EditGameSheet(
+    game: Game,
+    isCoverLoading: Boolean,
+    hasCoverError: Boolean,
+    onClose: () -> Unit,
+    onSave: (Game) -> Unit,
+    onCoverCrop: (CoverCropRequest) -> Unit,
+    onCoverRemoved: () -> Unit,
+) {
     var status by remember { mutableStateOf(game.status) }
     var hours by remember { mutableStateOf(game.hoursPlayed?.toString().orEmpty()) }
     var notes by remember { mutableStateOf(game.notes) }
+    var cropSource by remember(game.id) { mutableStateOf<LocalImageSource?>(null) }
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let { cropSource = LocalImageSource(it.toString()) }
+    }
     ShelvedSheet("Game Details", onClose) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)).background(SurfaceElevated)) {
-                game.coverImageUrl?.let { AsyncImage(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
+                game.coverModel()?.let { model ->
+                    AsyncImage(model, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                }
             }
             Text(
                 game.name,
@@ -119,13 +143,66 @@ internal fun EditGameSheet(game: Game, onClose: () -> Unit, onSave: (Game) -> Un
                 modifier = Modifier.padding(start = 14.dp),
             )
         }
+        SectionLabel(stringResource(R.string.cover_art_section))
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextButton(
+                enabled = !isCoverLoading,
+                onClick = {
+                    imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
+            ) {
+                Text(
+                    stringResource(
+                        if (game.customCoverImagePath == null) R.string.cover_art_choose else R.string.cover_art_change,
+                    ),
+                    color = Accent,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            if (game.customCoverImagePath != null) {
+                TextButton(
+                    enabled = !isCoverLoading,
+                    onClick = onCoverRemoved,
+                ) {
+                    Text(stringResource(R.string.cover_art_use_original), color = TextMuted)
+                }
+            }
+            if (isCoverLoading) {
+                CircularProgressIndicator(
+                    color = Accent,
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.padding(start = 8.dp).size(20.dp),
+                )
+            }
+        }
+        if (hasCoverError) {
+            Text(
+                stringResource(R.string.cover_art_save_error),
+                color = androidx.compose.ui.graphics.Color(0xFFFF8A80),
+                fontSize = 12.sp,
+                modifier = Modifier.padding(bottom = 6.dp),
+            )
+        }
         SectionLabel("Status")
         StatusPicker(status) { status = it }
         SectionLabel("Hours played")
         ShelvedField(hours, { hours = it.filter(Char::isDigit) }, "0", KeyboardType.Number)
         GameNotesSection(notes = notes, onNotesChange = { notes = it })
-        PrimaryButton("Save") {
+        PrimaryButton("Save", enabled = !isCoverLoading) {
             onSave(game.copy(status = status, hoursPlayed = hours.toIntOrNull(), notes = notes))
         }
+    }
+    cropSource?.let { source ->
+        GameCoverCropSheet(
+            source = source,
+            onClose = { cropSource = null },
+            onUseCover = {
+                cropSource = null
+                onCoverCrop(it)
+            },
+        )
     }
 }

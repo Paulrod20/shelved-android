@@ -1,9 +1,9 @@
 package com.paulrod.shelved.data.profile
 
-@JvmInline
-value class ProfileImageSource(val uri: String)
+import com.paulrod.shelved.data.image.LocalImageSource
 
 interface ProfileImageStorage {
-    suspend fun save(source: ProfileImageSource): String
+    suspend fun save(source: LocalImageSource): String
     suspend fun remove(path: String?)
+    suspend fun prune(referencedPaths: Set<String>)
 }

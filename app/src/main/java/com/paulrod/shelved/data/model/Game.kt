@@ -11,6 +11,7 @@ data class Game(
     val id: String,
     val name: String,
     val coverImageUrl: String? = null,
+    val customCoverImagePath: String? = null,
     val status: GameStatus = GameStatus.BACKLOG,
     val hoursPlayed: Int? = null,
     val notes: List<GameNote> = emptyList(),

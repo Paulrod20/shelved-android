@@ -33,10 +33,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.paulrod.shelved.R
 import com.paulrod.shelved.data.auth.AuthSession
+import com.paulrod.shelved.data.image.LocalImageSource
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.data.model.Platform
 import com.paulrod.shelved.data.model.Profile
-import com.paulrod.shelved.data.profile.ProfileImageSource
 import com.paulrod.shelved.ui.components.GameCover
 import com.paulrod.shelved.ui.components.SectionLabel
 import com.paulrod.shelved.ui.components.ShelvedScreen
@@ -87,7 +87,7 @@ fun ProfileScreen(
             games = state.games,
             isImageLoading = state.isProfileImageLoading,
             hasImageError = state.hasProfileImageError,
-            onImageSelected = { onAction(ProfileAction.ProfileImageSelected(ProfileImageSource(it.toString()))) },
+            onImageSelected = { onAction(ProfileAction.ProfileImageSelected(LocalImageSource(it.toString()))) },
             onImageRemoved = { onAction(ProfileAction.ProfileImageRemoved) },
             onClose = { onAction(ProfileAction.EditDismissed) },
             onSave = { onAction(ProfileAction.ProfileSaved(it)) },
@@ -188,7 +188,7 @@ private fun FavoriteGames(games: List<Game>) {
             ) {
                 rowGames.forEach { game ->
                     Column(Modifier.weight(1f)) {
-                        GameCover(game.coverImageUrl, Modifier.fillMaxWidth())
+                        GameCover(game, Modifier.fillMaxWidth())
                         Text(
                             game.name,
                             color = TextPrimary,

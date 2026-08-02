@@ -3,21 +3,16 @@ package com.paulrod.shelved.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.paulrod.shelved.data.RawgApi
-import com.paulrod.shelved.data.ShelvedRepository
+import com.paulrod.shelved.data.ShelvedDataRepository
 import com.paulrod.shelved.data.model.Game
-import com.paulrod.shelved.data.model.GameStatus
-import com.paulrod.shelved.ui.backlog.BacklogAction
-import com.paulrod.shelved.ui.backlog.BacklogSort
-import com.paulrod.shelved.ui.backlog.BacklogUiState
-import com.paulrod.shelved.ui.backlog.filteredAndSortedGames
 import com.paulrod.shelved.ui.search.SearchAction
 import com.paulrod.shelved.ui.search.SearchStatus
 import com.paulrod.shelved.ui.search.SearchUiState
 import com.paulrod.shelved.ui.stats.StatsUiState
 import com.paulrod.shelved.ui.stats.buildStatsUiState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,31 +25,12 @@ import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.milliseconds
 
 class ShelvedViewModel(
-    private val repository: ShelvedRepository,
+    private val repository: ShelvedDataRepository,
     private val api: RawgApi = RawgApi(),
 ) : ViewModel() {
-    private val backlogControls = MutableStateFlow(BacklogControls())
     private val _searchUiState = MutableStateFlow(SearchUiState())
-    private val _addSearchUiState = MutableStateFlow(SearchUiState())
     private var searchJob: Job? = null
-    private var addSearchJob: Job? = null
     private var detailsJob: Job? = null
-
-    val backlogUiState: StateFlow<BacklogUiState> = combine(repository.games, backlogControls) { games, controls ->
-        BacklogUiState(
-            allGames = games,
-            visibleGames = filteredAndSortedGames(games, controls.statusFilter, controls.searchQuery, controls.sortOrder),
-            statusFilter = controls.statusFilter,
-            searchQuery = controls.searchQuery,
-            isSearchVisible = controls.isSearchVisible,
-            sortOrder = controls.sortOrder,
-            isSortSheetVisible = controls.isSortSheetVisible,
-            isAddSheetVisible = controls.isAddSheetVisible,
-            selectedGame = controls.selectedGame,
-            selectedGameIds = controls.selectedGameIds,
-            isDeleteConfirmationVisible = controls.isDeleteConfirmationVisible,
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BacklogUiState())
 
     val statsUiState: StateFlow<StatsUiState> = repository.games
         .map(::buildStatsUiState)
@@ -63,72 +39,13 @@ class ShelvedViewModel(
     val searchUiState: StateFlow<SearchUiState> = combine(_searchUiState, repository.games) { state, games ->
         state.copy(libraryGameIds = games.mapTo(mutableSetOf()) { it.id })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SearchUiState())
-    val addSearchUiState: StateFlow<SearchUiState> = _addSearchUiState
-
-    fun onBacklogAction(action: BacklogAction) {
-        when (action) {
-            BacklogAction.ToggleSearch -> backlogControls.update { controls ->
-                val visible = !controls.isSearchVisible
-                controls.copy(isSearchVisible = visible, searchQuery = if (visible) controls.searchQuery else "")
-            }
-            is BacklogAction.SearchChanged -> backlogControls.update { it.copy(searchQuery = action.query) }
-            is BacklogAction.StatusSelected -> backlogControls.update { it.copy(statusFilter = action.status) }
-            BacklogAction.SortRequested -> backlogControls.update { it.copy(isSortSheetVisible = true) }
-            BacklogAction.SortDismissed -> backlogControls.update { it.copy(isSortSheetVisible = false) }
-            is BacklogAction.SortSelected -> backlogControls.update {
-                it.copy(sortOrder = action.sort, isSortSheetVisible = false)
-            }
-            BacklogAction.AddRequested -> {
-                resetAddSearch()
-                backlogControls.update { it.copy(isAddSheetVisible = true) }
-            }
-            BacklogAction.AddDismissed -> backlogControls.update { it.copy(isAddSheetVisible = false) }
-            is BacklogAction.GameSelected -> backlogControls.update { it.copy(selectedGame = action.game) }
-            BacklogAction.GameDismissed -> backlogControls.update { it.copy(selectedGame = null) }
-            is BacklogAction.GameAdded -> {
-                repository.addGame(action.game)
-                backlogControls.update { it.copy(isAddSheetVisible = false) }
-                resetAddSearch()
-            }
-            is BacklogAction.GameSaved -> {
-                repository.updateGame(action.game)
-                backlogControls.update { it.copy(selectedGame = null) }
-            }
-            is BacklogAction.GameLongPressed -> backlogControls.update {
-                it.copy(selectedGameIds = it.selectedGameIds + action.gameId)
-            }
-            is BacklogAction.GameSelectionToggled -> backlogControls.update {
-                val selectedIds = if (action.gameId in it.selectedGameIds) {
-                    it.selectedGameIds - action.gameId
-                } else {
-                    it.selectedGameIds + action.gameId
-                }
-                it.copy(selectedGameIds = selectedIds)
-            }
-            BacklogAction.SelectionCleared -> backlogControls.update {
-                it.copy(selectedGameIds = emptySet(), isDeleteConfirmationVisible = false)
-            }
-            BacklogAction.DeleteRequested -> backlogControls.update {
-                if (it.selectedGameIds.isEmpty()) it else it.copy(isDeleteConfirmationVisible = true)
-            }
-            BacklogAction.DeleteDismissed -> backlogControls.update {
-                it.copy(isDeleteConfirmationVisible = false)
-            }
-            BacklogAction.DeleteConfirmed -> {
-                repository.deleteGames(backlogControls.value.selectedGameIds)
-                backlogControls.update {
-                    it.copy(selectedGameIds = emptySet(), isDeleteConfirmationVisible = false)
-                }
-            }
-        }
-    }
 
     fun onSearchAction(action: SearchAction) {
         when (action) {
             is SearchAction.QueryChanged -> {
                 _searchUiState.value = _searchUiState.value.copy(query = action.query)
                 searchJob?.cancel()
-                searchJob = launchSearch(action.query, _searchUiState)
+                searchJob = launchSearch(action.query)
             }
             is SearchAction.GameSelected -> loadGameDetails(action.game)
             SearchAction.GameDismissed -> {
@@ -146,38 +63,28 @@ class ShelvedViewModel(
         }
     }
 
-    fun onAddSearchQueryChanged(query: String) {
-        _addSearchUiState.value = _addSearchUiState.value.copy(query = query)
-        addSearchJob?.cancel()
-        addSearchJob = launchSearch(query, _addSearchUiState)
-    }
-
-    fun onAddSearchGameSelected(game: Game?) {
-        _addSearchUiState.value = _addSearchUiState.value.copy(selectedGame = game)
-    }
-
-    private fun launchSearch(query: String, destination: MutableStateFlow<SearchUiState>): Job? {
+    private fun launchSearch(query: String): Job? {
         if (query.isBlank()) {
-            destination.value = SearchUiState()
+            _searchUiState.value = SearchUiState()
             return null
         }
         return viewModelScope.launch {
             delay(300.milliseconds)
-            destination.value = destination.value.copy(status = SearchStatus.Loading)
-            runCatching { withContext(Dispatchers.IO) { api.search(query) } }
-                .onSuccess { results -> destination.value = destination.value.copy(results = results, status = SearchStatus.Ready) }
-                .onFailure { error ->
-                    destination.value = destination.value.copy(
-                        results = emptyList(),
-                        status = SearchStatus.Error(error.message ?: "Search failed."),
-                    )
-                }
+            _searchUiState.value = _searchUiState.value.copy(status = SearchStatus.Loading)
+            try {
+                val results = withContext(Dispatchers.IO) { api.search(query) }
+                _searchUiState.value = _searchUiState.value.copy(
+                    results = results,
+                    status = SearchStatus.Ready,
+                )
+            } catch (error: Throwable) {
+                if (error is CancellationException) throw error
+                _searchUiState.value = _searchUiState.value.copy(
+                    results = emptyList(),
+                    status = SearchStatus.Error(error.message ?: "Search failed."),
+                )
+            }
         }
-    }
-
-    private fun resetAddSearch() {
-        addSearchJob?.cancel()
-        _addSearchUiState.value = SearchUiState()
     }
 
     private fun loadGameDetails(game: Game) {
@@ -212,19 +119,3 @@ private fun Game.mergeDetails(details: Game): Game = copy(
     platforms = details.platforms.ifEmpty { platforms },
     description = details.description,
 )
-
-private data class BacklogControls(
-    val statusFilter: GameStatus? = null,
-    val searchQuery: String = "",
-    val isSearchVisible: Boolean = false,
-    val sortOrder: BacklogSort = BacklogSort.RECENTLY_ADDED,
-    val isSortSheetVisible: Boolean = false,
-    val isAddSheetVisible: Boolean = false,
-    val selectedGame: Game? = null,
-    val selectedGameIds: Set<String> = emptySet(),
-    val isDeleteConfirmationVisible: Boolean = false,
-)
-
-private inline fun <T> MutableStateFlow<T>.update(transform: (T) -> T) {
-    value = transform(value)
-}

@@ -88,8 +88,12 @@ fun BacklogScreen(
     state.selectedGame?.let { game ->
         EditGameSheet(
             game = game,
+            isCoverLoading = state.isCoverImageLoading,
+            hasCoverError = state.hasCoverImageError,
             onClose = { onAction(BacklogAction.GameDismissed) },
             onSave = { onAction(BacklogAction.GameSaved(it)) },
+            onCoverCrop = { onAction(BacklogAction.CoverCropConfirmed(it)) },
+            onCoverRemoved = { onAction(BacklogAction.CustomCoverRemoved) },
         )
     }
     if (state.isDeleteConfirmationVisible) {
