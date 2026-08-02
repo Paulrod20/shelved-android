@@ -1,3 +1,62 @@
 <resources>
     <string name="app_name">Shelved</string>
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_google_sign_in">Sign in with Google</string>
+    <string name="onboarding_show_password">Show password</string>
+    <string name="onboarding_hide_password">Hide password</string>
+    <string name="onboarding_create_account">Create account</string>
+    <string name="onboarding_sign_in">Sign in</string>
+    <string name="onboarding_email">Email</string>
+    <string name="onboarding_password">Password</string>
+    <string name="onboarding_confirm_password">Confirm password</string>
+
+    <string name="onboarding_welcome_eyebrow">WELCOME TO SHELVED</string>
+    <string name="onboarding_welcome_title">Your games,\none shelf.</string>
+    <string name="onboarding_welcome_body">Build a personal library, keep track of what you’re playing, and see your progress at a glance.</string>
+    <string name="onboarding_get_started">Get started</string>
+
+    <string name="onboarding_features_eyebrow">MADE FOR YOUR BACKLOG</string>
+    <string name="onboarding_features_title">Everything you need.\nNothing you don’t.</string>
+    <string name="onboarding_library_title">Build your library</string>
+    <string name="onboarding_library_body">Find games and organize them by what’s next, in progress, or completed.</string>
+    <string name="onboarding_details_title">Remember the details</string>
+    <string name="onboarding_details_body">Log your hours and keep private notes as you play.</string>
+    <string name="onboarding_stats_title">See your progress</string>
+    <string name="onboarding_stats_body">Turn your library into useful, personal stats.</string>
+    <string name="onboarding_continue">Continue</string>
+
+    <string name="onboarding_account_eyebrow">YOUR SHELF, YOUR CHOICE</string>
+    <string name="onboarding_account_title">Start your way.</string>
+    <string name="onboarding_account_body">Sign in with Google or email, or keep your library local and use Shelved without an account.</string>
+    <string name="onboarding_continue_email">Continue with email</string>
+    <string name="onboarding_continue_local">Use Shelved without an account</string>
+    <string name="onboarding_local_note">Signing in is optional. Local mode keeps your library on this device.</string>
+
+    <string name="onboarding_email_eyebrow">SHELVED ACCOUNT</string>
+    <string name="onboarding_create_title">Create your account.</string>
+    <string name="onboarding_welcome_back">Welcome back.</string>
+    <string name="onboarding_forgot_password">Forgot password?</string>
+    <string name="onboarding_password_note">Use at least 8 characters. We’ll send a verification link to your email.</string>
+
+    <string name="onboarding_verify_title">Check your email.</string>
+    <string name="onboarding_verify_sent">We sent a verification link to\n%1$s</string>
+    <string name="onboarding_verify_required">Verify %1$s using the link in your email, or send a new one.</string>
+    <string name="onboarding_verify_failed">Your account is ready, but the verification email still needs to be sent to\n%1$s</string>
+    <string name="onboarding_continue_to_app">Continue to Shelved</string>
+    <string name="onboarding_resend_email">Send the email again</string>
+
+    <string name="onboarding_error_invalid_email">Enter a valid email address.</string>
+    <string name="onboarding_error_short_password">Use at least 8 characters for your password.</string>
+    <string name="onboarding_error_password_mismatch">Passwords don’t match.</string>
+    <string name="onboarding_error_missing_password">Enter your password.</string>
+    <string name="onboarding_error_reset_email">Enter your email address first.</string>
+    <string name="onboarding_notice_reset_sent">Password reset email sent.</string>
+    <string name="onboarding_notice_verification_sent">Verification email sent again.</string>
+    <string name="onboarding_error_verification_send">Your account was created, but the verification email couldn’t be sent. Try sending it again.</string>
+    <string name="onboarding_error_google">Google sign-in didn’t finish. Please try again.</string>
+    <string name="onboarding_error_weak_password">Choose a stronger password with at least 8 characters.</string>
+    <string name="onboarding_error_account_exists">An account already exists for this email. Try signing in instead.</string>
+    <string name="onboarding_error_invalid_credentials">Check your email and password, then try again.</string>
+    <string name="onboarding_error_network">Couldn’t connect. Check your internet connection and try again.</string>
+    <string name="onboarding_error_unknown">Something went wrong while signing in. Please try again.</string>
 </resources>
