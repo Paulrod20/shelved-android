@@ -17,6 +17,7 @@ import com.paulrod.shelved.ui.search.SearchAction
 import com.paulrod.shelved.ui.search.SearchStatus
 import com.paulrod.shelved.ui.search.SearchUiState
 import com.paulrod.shelved.ui.stats.StatsUiState
+import com.paulrod.shelved.ui.stats.buildStatsUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
@@ -72,13 +73,9 @@ class ShelvedViewModel(application: Application) : AndroidViewModel(application)
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProfileUiState())
 
-    val statsUiState: StateFlow<StatsUiState> = repository.games.map { games ->
-        StatsUiState(
-            totalGames = games.size,
-            totalHours = games.sumOf { it.hoursPlayed ?: 0 },
-            statusCounts = GameStatus.entries.associateWith { status -> games.count { it.status == status } },
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StatsUiState())
+    val statsUiState: StateFlow<StatsUiState> = repository.games
+        .map(::buildStatsUiState)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StatsUiState())
 
     val searchUiState: StateFlow<SearchUiState> = combine(_searchUiState, repository.games) { state, games ->
         state.copy(libraryGameIds = games.mapTo(mutableSetOf()) { it.id })
