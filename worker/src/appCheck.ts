@@ -34,11 +34,9 @@ export async function verifyAppCheckToken(
   const claims = decodeJson<AppCheckClaims>(parts[1]);
   if (header.alg !== "RS256" || header.typ !== "JWT" || !header.kid) throw new Error("Invalid token header.");
 
-  const key = (await appCheckKeys()).find((candidate) => candidate.kid === header.kid);
-  if (!key) {
-    cachedKeys = null;
-    throw new Error("Unknown App Check signing key.");
-  }
+  const key = (await appCheckKeys()).find((candidate) => candidate.kid === header.kid)
+    ?? (await appCheckKeys(true)).find((candidate) => candidate.kid === header.kid);
+  if (!key) throw new Error("Unknown App Check signing key.");
   const publicKey = await crypto.subtle.importKey(
     "jwk",
     key,
@@ -70,8 +68,8 @@ export function validateClaims(
   if (claims.sub !== appId) throw new Error("Invalid app ID.");
 }
 
-async function appCheckKeys(): Promise<AppCheckJwk[]> {
-  if (cachedKeys && cachedKeys.expiresAt > Date.now()) return cachedKeys.keys;
+async function appCheckKeys(forceRefresh = false): Promise<AppCheckJwk[]> {
+  if (!forceRefresh && cachedKeys && cachedKeys.expiresAt > Date.now()) return cachedKeys.keys;
   const response = await fetch("https://firebaseappcheck.googleapis.com/v1/jwks");
   if (!response.ok) throw new Error("Unable to load App Check keys.");
   const keySet = await response.json<JsonWebKeySet>();

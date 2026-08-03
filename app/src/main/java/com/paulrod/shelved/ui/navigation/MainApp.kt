@@ -18,15 +18,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.paulrod.shelved.data.ShelvedRepository
-import com.paulrod.shelved.data.cover.GameCoverImageStore
-import com.paulrod.shelved.data.auth.AuthGateway
-import com.paulrod.shelved.data.auth.AuthSessionProvider
-import com.paulrod.shelved.data.auth.GoogleSignInClient
-import com.paulrod.shelved.data.profile.ProfileImageStore
-import com.paulrod.shelved.data.sync.FirestoreCloudLibraryStore
+import com.paulrod.shelved.AppContainer
 import com.paulrod.shelved.data.sync.LibrarySyncCoordinator
-import com.paulrod.shelved.data.sync.SharedPreferencesLibraryOwnerStore
 import com.paulrod.shelved.ui.ShelvedViewModel
 import com.paulrod.shelved.ui.account.AccountViewModel
 import com.paulrod.shelved.ui.account.AccountUiState
@@ -41,22 +34,20 @@ import com.paulrod.shelved.ui.theme.Background
 
 @Composable
 internal fun MainApp(
-    authGateway: AuthGateway,
-    sessionProvider: AuthSessionProvider,
-    googleSignInClient: GoogleSignInClient,
+    container: AppContainer,
     activityContext: Context,
 ) {
-    val appContext = activityContext.applicationContext
-    val repository = remember(appContext) { ShelvedRepository.getInstance(appContext) }
-    val imageStore = remember(appContext) { ProfileImageStore(appContext) }
-    val coverImageStore = remember(appContext) { GameCoverImageStore(appContext) }
+    val repository = container.repository
+    val imageStore = container.profileImageStore
+    val coverImageStore = container.gameCoverImageStore
+    val authRepository = container.authRepository
     val syncScope = rememberCoroutineScope()
-    val syncCoordinator = remember(repository, sessionProvider, syncScope) {
+    val syncCoordinator = remember(container, syncScope) {
         LibrarySyncCoordinator(
             localStore = repository,
-            cloudStore = FirestoreCloudLibraryStore(),
-            sessionProvider = sessionProvider,
-            ownerStore = SharedPreferencesLibraryOwnerStore(appContext),
+            cloudStore = container.cloudLibraryStore,
+            sessionProvider = authRepository,
+            ownerStore = container.libraryOwnerStore,
             scope = syncScope,
             onError = { error -> Log.e("LibrarySync", "Cloud library sync failed.", error) },
         )
@@ -69,15 +60,17 @@ internal fun MainApp(
         imageStore.prune(setOfNotNull(repository.profile.value.profileImagePath))
         coverImageStore.prune(repository.games.value.mapNotNullTo(mutableSetOf()) { it.customCoverImagePath })
     }
-    val shelvedViewModel: ShelvedViewModel = viewModel { ShelvedViewModel(repository) }
+    val shelvedViewModel: ShelvedViewModel = viewModel {
+        ShelvedViewModel(repository, container.gameCatalog)
+    }
     val backlogViewModel: BacklogViewModel = viewModel {
-        BacklogViewModel(repository, coverImageStore)
+        BacklogViewModel(repository, coverImageStore, container.gameCatalog)
     }
     val profileViewModel: ProfileViewModel = viewModel {
         ProfileViewModel(repository, imageStore)
     }
     val accountViewModel: AccountViewModel = viewModel {
-        AccountViewModel(authGateway, sessionProvider)
+        AccountViewModel(authRepository, authRepository)
     }
     val accountState by accountViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -87,7 +80,7 @@ internal fun MainApp(
             onBack = accountViewModel::dismissSignIn,
             onGoogleSignIn = {
                 accountViewModel.signInWithGoogle {
-                    googleSignInClient.getIdToken(activityContext)
+                    container.googleSignInClient.getIdToken(activityContext)
                 }
             },
             onEmailSignIn = accountViewModel::signInWithEmail,

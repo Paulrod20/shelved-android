@@ -30,7 +30,6 @@ class BacklogSearchTest {
             EmptyGameRepository(),
             NoopCoverStorage(),
             catalog,
-            mainDispatcherRule.dispatcher,
         )
 
         viewModel.onAddSearchQueryChanged("Mario")

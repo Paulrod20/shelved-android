@@ -2,11 +2,15 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {validateClaims} from "../src/appCheck";
 import {
+  ApiError,
   escapeApicalypseString,
   parseShelvedGameId,
   sanitizeSearchQuery,
+  ShelvedGame,
   toShelvedGame,
 } from "../src/catalog";
+import {GameCatalogClient} from "../src/igdb";
+import {routeCatalogRequest} from "../src/routes";
 
 test("search queries are trimmed and escaped", () => {
   assert.equal(sanitizeSearchQuery("  Mario\nKart  "), "Mario Kart");
@@ -44,4 +48,42 @@ test("App Check claims must target this project and app", () => {
   assert.doesNotThrow(() => validateClaims(claims, "123", "app-id", 1_000));
   assert.throws(() => validateClaims({...claims, sub: "other-app"}, "123", "app-id", 1_000));
   assert.throws(() => validateClaims({...claims, exp: 999}, "123", "app-id", 1_000));
+});
+
+test("catalog routes normalize searches and decode game IDs", async () => {
+  const calls: string[] = [];
+  const game: ShelvedGame = {
+    id: "igdb:123",
+    name: "Example",
+    coverImageUrl: null,
+    released: null,
+    playtime: null,
+    platforms: [],
+    description: null,
+  };
+  const catalog: GameCatalogClient = {
+    async search(query) {
+      calls.push(`search:${query}`);
+      return [game];
+    },
+    async details(id) {
+      calls.push(`details:${id}`);
+      return game;
+    },
+  };
+
+  const search = await routeCatalogRequest(new URL("https://example.test/v1/search?query=%20Mario%20"), catalog);
+  const details = await routeCatalogRequest(new URL("https://example.test/v1/games/igdb%3A123"), catalog);
+
+  assert.deepEqual(calls, ["search:Mario", "details:igdb:123"]);
+  assert.equal(search.cacheSeconds, 600);
+  assert.equal(details.cacheSeconds, 86_400);
+});
+
+test("unknown catalog routes return a typed 404", async () => {
+  const catalog = {} as GameCatalogClient;
+  await assert.rejects(
+    routeCatalogRequest(new URL("https://example.test/unknown"), catalog),
+    (error: unknown) => error instanceof ApiError && error.status === 404,
+  );
 });

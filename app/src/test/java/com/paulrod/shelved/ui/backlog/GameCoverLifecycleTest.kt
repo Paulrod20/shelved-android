@@ -1,5 +1,6 @@
 package com.paulrod.shelved.ui.backlog
 
+import com.paulrod.shelved.data.GameCatalog
 import com.paulrod.shelved.data.ShelvedDataRepository
 import com.paulrod.shelved.data.cover.CoverCropRequest
 import com.paulrod.shelved.data.cover.GameCoverImageStorage
@@ -38,7 +39,7 @@ class GameCoverLifecycleTest {
             Game(id = "game", name = "Game", customCoverImagePath = OLD_COVER),
         )
         storage = FakeGameCoverStorage()
-        viewModel = BacklogViewModel(repository, storage)
+        viewModel = BacklogViewModel(repository, storage, UnusedGameCatalog)
     }
 
     @Test
@@ -125,6 +126,11 @@ class GameCoverLifecycleTest {
         const val OLD_COVER = "/game_covers/old.jpg"
         const val NEW_COVER = "/game_covers/new.jpg"
     }
+}
+
+private object UnusedGameCatalog : GameCatalog {
+    override suspend fun search(query: String): List<Game> = error("Not used")
+    override suspend fun details(game: Game): Game = error("Not used")
 }
 
 private class FakeShelvedRepository(initialGame: Game) : ShelvedDataRepository {
