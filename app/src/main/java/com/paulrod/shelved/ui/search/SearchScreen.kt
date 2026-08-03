@@ -81,6 +81,6 @@ private fun SearchPrompt() {
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(top = 12.dp),
         )
-        Text("Search the RAWG game database.", color = TextMuted, fontSize = 13.sp)
+        Text("Search the IGDB game database.", color = TextMuted, fontSize = 13.sp)
     }
 }

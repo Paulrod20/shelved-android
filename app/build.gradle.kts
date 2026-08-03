@@ -1,15 +1,8 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
 }
-
-val localProperties = Properties().apply {
-    rootProject.file("local.properties").inputStream().use { load(it) }
-}
-val rawgApiKey = localProperties.getProperty("RAWG_API_KEY", "")
 
 android {
     namespace = "com.paulrod.shelved"
@@ -23,7 +16,6 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "RAWG_API_KEY", "\"$rawgApiKey\"")
     }
 
     buildTypes {
@@ -79,4 +71,6 @@ dependencies {
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    debugImplementation(libs.firebase.appcheck.debug)
+    releaseImplementation(libs.firebase.appcheck.playintegrity)
 }

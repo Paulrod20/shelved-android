@@ -39,6 +39,12 @@ google-services.json
 local.properties
 build/
 app/build/
+worker/node_modules/
+worker/.dev.vars*
+worker/.env*
+.pnpm-store/
+.firebase/
+firebase-debug.log
 
 # Native secrets
 secrets.properties

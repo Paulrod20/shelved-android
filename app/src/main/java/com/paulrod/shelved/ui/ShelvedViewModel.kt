@@ -2,8 +2,8 @@ package com.paulrod.shelved.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.paulrod.shelved.data.CloudflareGameCatalog
 import com.paulrod.shelved.data.GameCatalog
-import com.paulrod.shelved.data.RawgApi
 import com.paulrod.shelved.data.ShelvedDataRepository
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.ui.search.SearchAction
@@ -29,7 +29,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class ShelvedViewModel(
     private val repository: ShelvedDataRepository,
-    private val api: GameCatalog = RawgApi(),
+    private val catalog: GameCatalog = CloudflareGameCatalog(),
     private val catalogDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
     private val _searchUiState = MutableStateFlow(SearchUiState())
@@ -80,7 +80,7 @@ class ShelvedViewModel(
             if (debounce) delay(300.milliseconds)
             _searchUiState.value = _searchUiState.value.copy(status = SearchStatus.Loading)
             try {
-                val results = withContext(catalogDispatcher) { api.search(query) }
+                val results = withContext(catalogDispatcher) { catalog.search(query) }
                 _searchUiState.value = _searchUiState.value.copy(
                     results = results,
                     status = SearchStatus.Ready,
@@ -104,7 +104,7 @@ class ShelvedViewModel(
         )
         detailsJob = viewModelScope.launch {
             try {
-                val details = withContext(catalogDispatcher) { api.details(game) }
+                val details = withContext(catalogDispatcher) { catalog.details(game) }
                 _searchUiState.value = _searchUiState.value.copy(
                     selectedGame = game.mergeDetails(details),
                     isDetailsLoading = false,

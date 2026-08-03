@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "shelved-game-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-03",
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "FIREBASE_PROJECT_NUMBER": "575171978673",
+    "FIREBASE_APP_ID": "1:575171978673:android:bc6e373b5dfd892f770990"
+  },
+  "secrets": {
+    "required": [
+      "TWITCH_CLIENT_ID",
+      "TWITCH_CLIENT_SECRET"
+    ]
+  },
+  "ratelimits": [
+    {
+      "name": "CATALOG_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 30,
+        "period": 10
+      }
+    }
+  ]
+}

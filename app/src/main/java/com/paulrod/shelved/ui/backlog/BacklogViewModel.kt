@@ -2,8 +2,8 @@ package com.paulrod.shelved.ui.backlog
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.paulrod.shelved.data.CloudflareGameCatalog
 import com.paulrod.shelved.data.GameCatalog
-import com.paulrod.shelved.data.RawgApi
 import com.paulrod.shelved.data.ShelvedDataRepository
 import com.paulrod.shelved.data.cover.CoverCropRequest
 import com.paulrod.shelved.data.cover.GameCoverImageStorage
@@ -29,7 +29,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class BacklogViewModel(
     private val repository: ShelvedDataRepository,
     private val coverImageStorage: GameCoverImageStorage,
-    private val api: GameCatalog = RawgApi(),
+    private val catalog: GameCatalog = CloudflareGameCatalog(),
     private val catalogDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
     private val controls = MutableStateFlow(BacklogControls())
@@ -240,7 +240,7 @@ class BacklogViewModel(
             if (debounce) delay(300.milliseconds)
             _addSearchUiState.value = _addSearchUiState.value.copy(status = SearchStatus.Loading)
             try {
-                val results = withContext(catalogDispatcher) { api.search(query) }
+                val results = withContext(catalogDispatcher) { catalog.search(query) }
                 _addSearchUiState.value = _addSearchUiState.value.copy(
                     results = results,
                     status = SearchStatus.Ready,

@@ -52,13 +52,13 @@ class BacklogSearchTest {
     private class FailsOnceCatalog : GameCatalog {
         var searchCount = 0
 
-        override fun search(query: String): List<Game> {
+        override suspend fun search(query: String): List<Game> {
             searchCount += 1
             if (searchCount == 1) throw SocketTimeoutException()
             return listOf(Game(id = "mario", name = query))
         }
 
-        override fun details(game: Game) = game
+        override suspend fun details(game: Game) = game
     }
 
     private class EmptyGameRepository : ShelvedDataRepository {

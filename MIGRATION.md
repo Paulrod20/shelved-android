@@ -8,14 +8,14 @@ This repository is a native Android application: Kotlin and Jetpack Compose only
 | React Navigation tabs | AndroidX navigation state |
 | AsyncStorage | Device-local repository with a versionable JSON persistence shape |
 | React contexts/hooks | `ShelvedViewModel`, repository, and `StateFlow` |
-| `fetch` / `AbortController` | `HttpURLConnection` + Kotlin coroutines + LRU search cache |
+| `fetch` / `AbortController` | Cloudflare Worker + Kotlin coroutines + LRU search cache |
 | React Native sheets | Material 3 `ModalBottomSheet` |
 
 The Android package tree mirrors the RN feature boundaries:
 
 ```text
 app/src/main/java/com/paulrod/shelved/
-  data/          # Persistent repository, RAWG API, and models
+  data/          # Persistent repository, Cloudflare-backed IGDB catalog, and models
   ui/            # ViewModel and StateFlows
   ui/navigation/ # Backlog, Search, Stats, Profile destinations
   ui/theme/      # Shelved colors and theme
