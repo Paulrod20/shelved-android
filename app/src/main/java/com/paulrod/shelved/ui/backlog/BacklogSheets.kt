@@ -89,7 +89,7 @@ internal fun AddGameSheet(
     onGameSelected: (Game?) -> Unit,
     onAdd: (Game) -> Unit,
 ) {
-    ShelvedSheet("Add Game", onClose) {
+    ShelvedSheet("Add Game", onClose, scrollable = false) {
         SearchField(state.query, onChange = onQueryChanged)
         when (val status = state.status) {
             SearchStatus.Loading -> CircularProgressIndicator(

@@ -9,6 +9,8 @@ import com.paulrod.shelved.data.model.GameStatus
 import com.paulrod.shelved.data.model.Platform
 import com.paulrod.shelved.data.model.Profile
 import com.paulrod.shelved.data.profile.ProfileRepository
+import com.paulrod.shelved.data.sync.LibrarySnapshot
+import com.paulrod.shelved.data.sync.LocalLibraryStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,7 +20,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** Small, device-local store. The JSON shape is intentionally stable and easy to migrate. */
-class ShelvedRepository private constructor(context: Context) : ShelvedDataRepository, ProfileRepository {
+class ShelvedRepository private constructor(context: Context) :
+    ShelvedDataRepository,
+    ProfileRepository,
+    LocalLibraryStore {
     private val preferences = context.getSharedPreferences("shelved", Context.MODE_PRIVATE)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val persistence = OrderedWriteQueue<PersistenceWrite>(
@@ -52,6 +57,14 @@ class ShelvedRepository private constructor(context: Context) : ShelvedDataRepos
     override fun updateProfile(profile: Profile) {
         _profile.value = profile
         persistence.enqueue(PersistenceWrite.ProfileSnapshot(profile))
+    }
+
+    /** Replaces both local models after a cloud restore, while keeping disk writes ordered. */
+    override fun replaceLibrary(snapshot: LibrarySnapshot) {
+        _games.value = snapshot.games
+        _profile.value = snapshot.profile
+        persistence.enqueue(PersistenceWrite.GameSnapshot(snapshot.games.toList()))
+        persistence.enqueue(PersistenceWrite.ProfileSnapshot(snapshot.profile))
     }
 
     private fun saveGames(games: List<Game>) {

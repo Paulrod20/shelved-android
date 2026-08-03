@@ -96,7 +96,7 @@ fun CatalogGameSheet(
 ) {
     var status by remember { mutableStateOf(GameStatus.BACKLOG) }
     var descriptionExpanded by remember(game.id) { mutableStateOf(false) }
-    ShelvedSheet("Game Details", onClose) {
+    ShelvedSheet("Game Details", onClose, scrollable = false) {
         Column(
             Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState()),
         ) {

@@ -1,17 +1,20 @@
 package com.paulrod.shelved.ui.navigation
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -21,6 +24,9 @@ import com.paulrod.shelved.data.auth.AuthGateway
 import com.paulrod.shelved.data.auth.AuthSessionProvider
 import com.paulrod.shelved.data.auth.GoogleSignInClient
 import com.paulrod.shelved.data.profile.ProfileImageStore
+import com.paulrod.shelved.data.sync.FirestoreCloudLibraryStore
+import com.paulrod.shelved.data.sync.LibrarySyncCoordinator
+import com.paulrod.shelved.data.sync.SharedPreferencesLibraryOwnerStore
 import com.paulrod.shelved.ui.ShelvedViewModel
 import com.paulrod.shelved.ui.account.AccountViewModel
 import com.paulrod.shelved.ui.account.AccountUiState
@@ -44,6 +50,21 @@ internal fun MainApp(
     val repository = remember(appContext) { ShelvedRepository.getInstance(appContext) }
     val imageStore = remember(appContext) { ProfileImageStore(appContext) }
     val coverImageStore = remember(appContext) { GameCoverImageStore(appContext) }
+    val syncScope = rememberCoroutineScope()
+    val syncCoordinator = remember(repository, sessionProvider, syncScope) {
+        LibrarySyncCoordinator(
+            localStore = repository,
+            cloudStore = FirestoreCloudLibraryStore(),
+            sessionProvider = sessionProvider,
+            ownerStore = SharedPreferencesLibraryOwnerStore(appContext),
+            scope = syncScope,
+            onError = { error -> Log.e("LibrarySync", "Cloud library sync failed.", error) },
+        )
+    }
+    DisposableEffect(syncCoordinator) {
+        val syncJob = syncCoordinator.start()
+        onDispose(syncJob::cancel)
+    }
     LaunchedEffect(repository, imageStore, coverImageStore) {
         imageStore.prune(setOfNotNull(repository.profile.value.profileImagePath))
         coverImageStore.prune(repository.games.value.mapNotNullTo(mutableSetOf()) { it.customCoverImagePath })

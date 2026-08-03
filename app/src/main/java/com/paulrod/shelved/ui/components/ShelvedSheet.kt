@@ -40,8 +40,16 @@ import com.paulrod.shelved.ui.theme.TextPrimary
 fun ShelvedSheet(
     title: String,
     onClose: () -> Unit,
+    scrollable: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val scrollState = rememberScrollState()
+    val contentModifier = if (scrollable) {
+        Modifier.verticalScroll(scrollState)
+    } else {
+        Modifier
+    }
+
     ModalBottomSheet(
         onDismissRequest = onClose,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -53,7 +61,7 @@ fun ShelvedSheet(
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
     ) {
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding()
+            Modifier.fillMaxWidth().then(contentModifier).imePadding()
                 .padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
         ) {
             Row(
