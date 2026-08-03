@@ -91,4 +91,8 @@
     <string name="cover_crop_description">Selected game cover</string>
     <string name="cover_crop_open_error">This image could not be opened. Choose a different image.</string>
     <string name="cover_crop_confirm">Use this cover</string>
+
+    <string name="search_error_connection">Couldn’t connect to game search. Check your internet connection and try again.</string>
+    <string name="search_error_unavailable">Game search is temporarily unavailable. Please try again.</string>
+    <string name="search_retry">Retry</string>
 </resources>

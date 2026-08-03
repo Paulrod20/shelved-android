@@ -35,6 +35,7 @@ fun BacklogScreen(
     addSearchState: SearchUiState,
     onAction: (BacklogAction) -> Unit,
     onAddSearchQueryChanged: (String) -> Unit,
+    onAddSearchRetry: () -> Unit,
     onAddSearchGameSelected: (Game?) -> Unit,
 ) {
     val isSelecting = state.selectedGameIds.isNotEmpty()
@@ -74,6 +75,7 @@ fun BacklogScreen(
             state = addSearchState,
             onClose = { onAction(BacklogAction.AddDismissed) },
             onQueryChanged = onAddSearchQueryChanged,
+            onRetry = onAddSearchRetry,
             onGameSelected = onAddSearchGameSelected,
             onAdd = { onAction(BacklogAction.GameAdded(it)) },
         )

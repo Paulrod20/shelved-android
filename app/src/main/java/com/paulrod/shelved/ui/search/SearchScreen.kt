@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.paulrod.shelved.ui.components.CatalogGameSheet
 import com.paulrod.shelved.ui.components.SearchField
+import com.paulrod.shelved.ui.components.SearchFailurePanel
 import com.paulrod.shelved.ui.components.SearchResultRow
 import com.paulrod.shelved.ui.components.ShelvedScreen
 import com.paulrod.shelved.ui.theme.Accent
@@ -38,7 +39,11 @@ fun SearchScreen(
                 color = Accent,
                 modifier = Modifier.align(Alignment.CenterHorizontally).padding(24.dp),
             )
-            is SearchStatus.Error -> Text(status.message, color = TextMuted, modifier = Modifier.padding(top = 16.dp))
+            is SearchStatus.Error -> SearchFailurePanel(
+                failure = status.failure,
+                onRetry = { onAction(SearchAction.RetryRequested) },
+                modifier = Modifier.padding(top = 16.dp),
+            )
             SearchStatus.Ready -> if (state.results.isEmpty()) {
                 Text("No games found.", color = TextMuted, modifier = Modifier.padding(top = 16.dp))
             }

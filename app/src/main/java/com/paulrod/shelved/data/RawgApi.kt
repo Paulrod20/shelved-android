@@ -7,12 +7,17 @@ import java.net.URL
 import java.net.URLEncoder
 import org.json.JSONObject
 
-class RawgApi {
+interface GameCatalog {
+    fun search(query: String): List<Game>
+    fun details(game: Game): Game
+}
+
+class RawgApi : GameCatalog {
     private val cache = object : LinkedHashMap<String, List<Game>>(50, .75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<Game>>?) = size > 50
     }
 
-    fun search(query: String): List<Game> {
+    override fun search(query: String): List<Game> {
         val normalized = query.trim().lowercase()
         if (normalized.isEmpty()) return emptyList()
         synchronized(cache) { cache[normalized]?.let { return it } }
@@ -27,7 +32,7 @@ class RawgApi {
         return games
     }
 
-    fun details(game: Game): Game {
+    override fun details(game: Game): Game {
         check(BuildConfig.RAWG_API_KEY.isNotBlank()) {
             "RAWG API key is missing. Add RAWG_API_KEY to local.properties."
         }

@@ -45,6 +45,7 @@ import com.paulrod.shelved.ui.components.GameCover
 import com.paulrod.shelved.ui.components.coverModel
 import com.paulrod.shelved.ui.components.PrimaryButton
 import com.paulrod.shelved.ui.components.SearchField
+import com.paulrod.shelved.ui.components.SearchFailurePanel
 import com.paulrod.shelved.ui.components.SearchResultRow
 import com.paulrod.shelved.ui.components.SectionLabel
 import com.paulrod.shelved.ui.components.ShelvedField
@@ -86,6 +87,7 @@ internal fun AddGameSheet(
     state: SearchUiState,
     onClose: () -> Unit,
     onQueryChanged: (String) -> Unit,
+    onRetry: () -> Unit,
     onGameSelected: (Game?) -> Unit,
     onAdd: (Game) -> Unit,
 ) {
@@ -96,7 +98,11 @@ internal fun AddGameSheet(
                 color = Accent,
                 modifier = Modifier.align(Alignment.CenterHorizontally).padding(24.dp),
             )
-            is SearchStatus.Error -> Text(status.message, color = TextMuted, modifier = Modifier.padding(vertical = 18.dp))
+            is SearchStatus.Error -> SearchFailurePanel(
+                failure = status.failure,
+                onRetry = onRetry,
+                modifier = Modifier.padding(vertical = 18.dp),
+            )
             else -> Unit
         }
         LazyColumn(Modifier.fillMaxWidth()) {

@@ -32,17 +32,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.paulrod.shelved.R
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.data.model.GameStatus
 import com.paulrod.shelved.ui.theme.Accent
 import com.paulrod.shelved.ui.theme.SurfaceElevated
 import com.paulrod.shelved.ui.theme.TextMuted
 import com.paulrod.shelved.ui.theme.TextPrimary
+import com.paulrod.shelved.ui.search.SearchFailure
 
 @Composable
 fun SearchField(
@@ -81,6 +84,24 @@ fun SearchResultRow(game: Game, onClick: () -> Unit) {
             game.released?.take(4)?.let { Text(it, color = TextMuted, fontSize = 12.sp) }
         }
         Text("›", color = TextMuted, fontSize = 24.sp)
+    }
+}
+
+@Composable
+fun SearchFailurePanel(
+    failure: SearchFailure,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            stringResource(failure.messageResource),
+            color = TextMuted,
+            fontSize = 13.sp,
+        )
+        TextButton(onClick = onRetry) {
+            Text(stringResource(R.string.search_retry), color = Accent, fontWeight = FontWeight.SemiBold)
+        }
     }
 }
 

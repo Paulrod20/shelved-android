@@ -2,6 +2,7 @@ package com.paulrod.shelved.ui.backlog
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.paulrod.shelved.data.GameCatalog
 import com.paulrod.shelved.data.RawgApi
 import com.paulrod.shelved.data.ShelvedDataRepository
 import com.paulrod.shelved.data.cover.CoverCropRequest
@@ -10,7 +11,9 @@ import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.data.model.GameStatus
 import com.paulrod.shelved.ui.search.SearchStatus
 import com.paulrod.shelved.ui.search.SearchUiState
+import com.paulrod.shelved.ui.search.toSearchFailure
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -26,7 +29,8 @@ import kotlin.time.Duration.Companion.milliseconds
 class BacklogViewModel(
     private val repository: ShelvedDataRepository,
     private val coverImageStorage: GameCoverImageStorage,
-    private val api: RawgApi = RawgApi(),
+    private val api: GameCatalog = RawgApi(),
+    private val catalogDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
     private val controls = MutableStateFlow(BacklogControls())
     private val _addSearchUiState = MutableStateFlow(SearchUiState())
@@ -114,6 +118,11 @@ class BacklogViewModel(
 
     fun onAddSearchGameSelected(game: Game?) {
         _addSearchUiState.value = _addSearchUiState.value.copy(selectedGame = game)
+    }
+
+    fun retryAddSearch() {
+        addSearchJob?.cancel()
+        addSearchJob = launchAddSearch(_addSearchUiState.value.query, debounce = false)
     }
 
     private fun saveGame(game: Game) {
@@ -222,16 +231,16 @@ class BacklogViewModel(
         viewModelScope.launch { coverPaths.forEach { coverImageStorage.remove(it) } }
     }
 
-    private fun launchAddSearch(query: String): Job? {
+    private fun launchAddSearch(query: String, debounce: Boolean = true): Job? {
         if (query.isBlank()) {
             _addSearchUiState.value = SearchUiState()
             return null
         }
         return viewModelScope.launch {
-            delay(300.milliseconds)
+            if (debounce) delay(300.milliseconds)
             _addSearchUiState.value = _addSearchUiState.value.copy(status = SearchStatus.Loading)
             try {
-                val results = withContext(Dispatchers.IO) { api.search(query) }
+                val results = withContext(catalogDispatcher) { api.search(query) }
                 _addSearchUiState.value = _addSearchUiState.value.copy(
                     results = results,
                     status = SearchStatus.Ready,
@@ -240,7 +249,7 @@ class BacklogViewModel(
                 if (error is CancellationException) throw error
                 _addSearchUiState.value = _addSearchUiState.value.copy(
                     results = emptyList(),
-                    status = SearchStatus.Error(error.message ?: "Search failed."),
+                    status = SearchStatus.Error(error.toSearchFailure()),
                 )
             }
         }

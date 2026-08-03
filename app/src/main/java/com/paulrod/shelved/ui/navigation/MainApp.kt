@@ -126,6 +126,7 @@ private fun MainNavigation(
                     addSearchState = addSearchState,
                     onAction = backlogViewModel::onAction,
                     onAddSearchQueryChanged = backlogViewModel::onAddSearchQueryChanged,
+                    onAddSearchRetry = backlogViewModel::retryAddSearch,
                     onAddSearchGameSelected = backlogViewModel::onAddSearchGameSelected,
                 )
                 Destination.SEARCH -> SearchScreen(

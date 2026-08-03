@@ -16,11 +16,12 @@ sealed interface SearchStatus {
     data object Idle : SearchStatus
     data object Loading : SearchStatus
     data object Ready : SearchStatus
-    data class Error(val message: String) : SearchStatus
+    data class Error(val failure: SearchFailure) : SearchStatus
 }
 
 sealed interface SearchAction {
     data class QueryChanged(val query: String) : SearchAction
+    data object RetryRequested : SearchAction
     data class GameSelected(val game: Game) : SearchAction
     data object GameDismissed : SearchAction
     data class GameAdded(val game: Game) : SearchAction

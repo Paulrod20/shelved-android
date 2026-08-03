@@ -2,15 +2,18 @@ package com.paulrod.shelved.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.paulrod.shelved.data.GameCatalog
 import com.paulrod.shelved.data.RawgApi
 import com.paulrod.shelved.data.ShelvedDataRepository
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.ui.search.SearchAction
 import com.paulrod.shelved.ui.search.SearchStatus
 import com.paulrod.shelved.ui.search.SearchUiState
+import com.paulrod.shelved.ui.search.toSearchFailure
 import com.paulrod.shelved.ui.stats.StatsUiState
 import com.paulrod.shelved.ui.stats.buildStatsUiState
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -26,7 +29,8 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class ShelvedViewModel(
     private val repository: ShelvedDataRepository,
-    private val api: RawgApi = RawgApi(),
+    private val api: GameCatalog = RawgApi(),
+    private val catalogDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
     private val _searchUiState = MutableStateFlow(SearchUiState())
     private var searchJob: Job? = null
@@ -47,6 +51,10 @@ class ShelvedViewModel(
                 searchJob?.cancel()
                 searchJob = launchSearch(action.query)
             }
+            SearchAction.RetryRequested -> {
+                searchJob?.cancel()
+                searchJob = launchSearch(_searchUiState.value.query, debounce = false)
+            }
             is SearchAction.GameSelected -> loadGameDetails(action.game)
             SearchAction.GameDismissed -> {
                 detailsJob?.cancel()
@@ -63,16 +71,16 @@ class ShelvedViewModel(
         }
     }
 
-    private fun launchSearch(query: String): Job? {
+    private fun launchSearch(query: String, debounce: Boolean = true): Job? {
         if (query.isBlank()) {
             _searchUiState.value = SearchUiState()
             return null
         }
         return viewModelScope.launch {
-            delay(300.milliseconds)
+            if (debounce) delay(300.milliseconds)
             _searchUiState.value = _searchUiState.value.copy(status = SearchStatus.Loading)
             try {
-                val results = withContext(Dispatchers.IO) { api.search(query) }
+                val results = withContext(catalogDispatcher) { api.search(query) }
                 _searchUiState.value = _searchUiState.value.copy(
                     results = results,
                     status = SearchStatus.Ready,
@@ -81,7 +89,7 @@ class ShelvedViewModel(
                 if (error is CancellationException) throw error
                 _searchUiState.value = _searchUiState.value.copy(
                     results = emptyList(),
-                    status = SearchStatus.Error(error.message ?: "Search failed."),
+                    status = SearchStatus.Error(error.toSearchFailure()),
                 )
             }
         }
@@ -96,7 +104,7 @@ class ShelvedViewModel(
         )
         detailsJob = viewModelScope.launch {
             try {
-                val details = withContext(Dispatchers.IO) { api.details(game) }
+                val details = withContext(catalogDispatcher) { api.details(game) }
                 _searchUiState.value = _searchUiState.value.copy(
                     selectedGame = game.mergeDetails(details),
                     isDetailsLoading = false,
