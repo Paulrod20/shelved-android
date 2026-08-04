@@ -111,6 +111,36 @@ class AccountViewModelTest {
     }
 
     @Test
+    fun googleSuccessPassesTokenAndClosesScreen() = runTest {
+        viewModel.showSignIn()
+
+        viewModel.signInWithGoogle { "google-token" }
+        advanceUntilIdle()
+
+        assertEquals("google-token", auth.googleToken)
+        assertFalse(viewModel.uiState.value.isSignInVisible)
+        assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun resendUpdatesVerificationState() = runTest {
+        auth.createResult = EmailAuthResult.VerificationRequired(
+            "player@example.com",
+            VerificationDelivery.REQUIRED,
+        )
+        viewModel.showSignIn()
+        viewModel.createEmailAccount("player@example.com", "password", "password")
+        advanceUntilIdle()
+
+        viewModel.resendVerification()
+        advanceUntilIdle()
+
+        assertTrue(auth.didResendVerification)
+        assertEquals(VerificationDelivery.SENT, viewModel.uiState.value.verificationDelivery)
+        assertEquals(AuthMessage.VERIFICATION_EMAIL_SENT, viewModel.uiState.value.noticeMessage)
+    }
+
+    @Test
     fun signOutClearsSessionWithoutWaitingForListener() {
         auth.emit(AuthSession(userId = "user", email = "player@example.com"))
         viewModel.signOut()
@@ -131,6 +161,8 @@ private class FakeAccountAuth(
     var lastEmail: String? = null
     var lastCreatedEmail: String? = null
     var createResult: EmailAuthResult = EmailAuthResult.SignedIn
+    var googleToken: String? = null
+    var didResendVerification = false
     var didSignOut = false
 
     fun emit(session: AuthSession) {
@@ -147,11 +179,15 @@ private class FakeAccountAuth(
         return EmailAuthResult.SignedIn
     }
 
-    override suspend fun signInWithGoogle(idToken: String) = Unit
+    override suspend fun signInWithGoogle(idToken: String) {
+        googleToken = idToken
+    }
 
     override suspend fun sendPasswordReset(email: String) = Unit
 
-    override suspend fun resendVerification() = Unit
+    override suspend fun resendVerification() {
+        didResendVerification = true
+    }
 
     override fun signOut() {
         didSignOut = true

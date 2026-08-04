@@ -63,6 +63,34 @@ class LibrarySessionCoordinatorTest {
     }
 
     @Test
+    fun signedOutToSignedInTransitionImportsGamesAddedDuringTheTrial() = runTest {
+        val persistent = InMemoryLibraryRepository()
+        val trial = InMemoryLibraryRepository()
+        val synchronizer = FakeSynchronizer(persistent)
+        val active = ActiveLibraryRepository(trial, backgroundScope)
+        val sessionProvider = FakeSessionProvider(AuthSession())
+        LibrarySessionCoordinator(
+            persistent,
+            trial,
+            active,
+            synchronizer,
+            sessionProvider,
+            FakeOwnerStore(),
+            backgroundScope,
+        ).start()
+        runCurrent()
+
+        trial.addGame(Game("trial", "Trial game"))
+        sessionProvider.emit(AuthSession(userId = "user"))
+        runCurrent()
+
+        assertEquals(listOf("trial"), persistent.games.value.map(Game::id))
+        assertEquals(listOf("trial"), active.games.value.map(Game::id))
+        assertTrue(trial.games.value.isEmpty())
+        assertEquals(listOf("user"), synchronizer.userIds)
+    }
+
+    @Test
     fun accountSwitchImportsTrialButExcludesThePreviousAccountsLibrary() = runTest {
         val persistent = libraryWith("private")
         val trial = libraryWith("trial")
@@ -123,6 +151,10 @@ class LibrarySessionCoordinatorTest {
         private val state = MutableStateFlow(initial)
         override val currentSession: AuthSession get() = state.value
         override val sessions: Flow<AuthSession> = state
+
+        fun emit(session: AuthSession) {
+            state.value = session
+        }
     }
 
     private class FakeOwnerStore(override var userId: String? = null) : LibraryOwnerStore
