@@ -6,9 +6,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -136,5 +139,45 @@ internal fun EmailAccountButton(label: String, enabled: Boolean = true, onClick:
 internal fun AuthTextButton(label: String, enabled: Boolean = true, onClick: () -> Unit) {
     TextButton(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
         Text(label, color = if (enabled) TextMuted else Border, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+internal fun AuthModeSelector(selected: EmailAuthMode, onSelect: (EmailAuthMode) -> Unit) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Surface).padding(4.dp)) {
+        AuthModeOption(
+            stringResource(R.string.onboarding_create_account),
+            EmailAuthMode.CREATE_ACCOUNT,
+            selected,
+            onSelect,
+        )
+        AuthModeOption(
+            stringResource(R.string.onboarding_sign_in),
+            EmailAuthMode.SIGN_IN,
+            selected,
+            onSelect,
+        )
+    }
+}
+
+@Composable
+private fun RowScope.AuthModeOption(
+    label: String,
+    mode: EmailAuthMode,
+    selected: EmailAuthMode,
+    onSelect: (EmailAuthMode) -> Unit,
+) {
+    Box(
+        Modifier.weight(1f).clip(RoundedCornerShape(11.dp))
+            .background(if (mode == selected) SurfaceElevated else Color.Transparent)
+            .clickable { onSelect(mode) }.padding(vertical = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            color = if (mode == selected) TextPrimary else TextMuted,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp,
+        )
     }
 }

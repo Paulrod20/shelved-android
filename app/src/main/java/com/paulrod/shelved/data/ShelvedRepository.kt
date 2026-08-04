@@ -8,9 +8,7 @@ import com.paulrod.shelved.data.model.GameNote
 import com.paulrod.shelved.data.model.GameStatus
 import com.paulrod.shelved.data.model.Platform
 import com.paulrod.shelved.data.model.Profile
-import com.paulrod.shelved.data.profile.ProfileRepository
 import com.paulrod.shelved.data.sync.LibrarySnapshot
-import com.paulrod.shelved.data.sync.LocalLibraryStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -21,9 +19,7 @@ import org.json.JSONObject
 
 /** Small, device-local store. The JSON shape is intentionally stable and easy to migrate. */
 class ShelvedRepository private constructor(context: Context) :
-    ShelvedDataRepository,
-    ProfileRepository,
-    LocalLibraryStore {
+    LibraryRepository {
     private val preferences = context.getSharedPreferences("shelved", Context.MODE_PRIVATE)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val persistence = OrderedWriteQueue<PersistenceWrite>(

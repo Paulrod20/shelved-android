@@ -19,11 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.paulrod.shelved.AppContainer
+import com.paulrod.shelved.data.sync.LibrarySessionCoordinator
 import com.paulrod.shelved.data.sync.LibrarySyncCoordinator
 import com.paulrod.shelved.ui.ShelvedViewModel
 import com.paulrod.shelved.ui.account.AccountViewModel
 import com.paulrod.shelved.ui.account.AccountUiState
-import com.paulrod.shelved.ui.account.SignInScreen
+import com.paulrod.shelved.ui.account.AccountAuthScreen
 import com.paulrod.shelved.ui.backlog.BacklogScreen
 import com.paulrod.shelved.ui.backlog.BacklogViewModel
 import com.paulrod.shelved.ui.profile.ProfileScreen
@@ -37,28 +38,40 @@ internal fun MainApp(
     container: AppContainer,
     activityContext: Context,
 ) {
-    val repository = container.repository
+    val persistentRepository = container.persistentRepository
+    val trialRepository = container.trialRepository
+    val repository = container.activeRepository
     val imageStore = container.profileImageStore
     val coverImageStore = container.gameCoverImageStore
     val authRepository = container.authRepository
     val syncScope = rememberCoroutineScope()
-    val syncCoordinator = remember(container, syncScope) {
+    val syncCoordinator = remember(container) {
         LibrarySyncCoordinator(
-            localStore = repository,
+            localStore = persistentRepository,
             cloudStore = container.cloudLibraryStore,
-            sessionProvider = authRepository,
-            ownerStore = container.libraryOwnerStore,
-            scope = syncScope,
             onError = { error -> Log.e("LibrarySync", "Cloud library sync failed.", error) },
         )
     }
-    DisposableEffect(syncCoordinator) {
-        val syncJob = syncCoordinator.start()
-        onDispose(syncJob::cancel)
+    val sessionCoordinator = remember(container, syncScope) {
+        LibrarySessionCoordinator(
+            persistentRepository = persistentRepository,
+            trialRepository = trialRepository,
+            activeRepository = repository,
+            synchronizer = syncCoordinator,
+            sessionProvider = authRepository,
+            ownerStore = container.libraryOwnerStore,
+            scope = syncScope,
+        )
     }
-    LaunchedEffect(repository, imageStore, coverImageStore) {
-        imageStore.prune(setOfNotNull(repository.profile.value.profileImagePath))
-        coverImageStore.prune(repository.games.value.mapNotNullTo(mutableSetOf()) { it.customCoverImagePath })
+    DisposableEffect(sessionCoordinator) {
+        val sessionJob = sessionCoordinator.start()
+        onDispose(sessionJob::cancel)
+    }
+    LaunchedEffect(persistentRepository, imageStore, coverImageStore) {
+        imageStore.prune(setOfNotNull(persistentRepository.profile.value.profileImagePath))
+        coverImageStore.prune(
+            persistentRepository.games.value.mapNotNullTo(mutableSetOf()) { it.customCoverImagePath },
+        )
     }
     val shelvedViewModel: ShelvedViewModel = viewModel {
         ShelvedViewModel(repository, container.gameCatalog)
@@ -75,7 +88,7 @@ internal fun MainApp(
     val accountState by accountViewModel.uiState.collectAsStateWithLifecycle()
 
     if (accountState.isSignInVisible) {
-        SignInScreen(
+        AccountAuthScreen(
             state = accountState,
             onBack = accountViewModel::dismissSignIn,
             onGoogleSignIn = {
@@ -83,8 +96,11 @@ internal fun MainApp(
                     container.googleSignInClient.getIdToken(activityContext)
                 }
             },
+            onCreateAccount = accountViewModel::createEmailAccount,
             onEmailSignIn = accountViewModel::signInWithEmail,
             onPasswordReset = accountViewModel::sendPasswordReset,
+            onContinueAfterVerification = accountViewModel::continueAfterVerification,
+            onResendVerification = accountViewModel::resendVerification,
             onClearFeedback = accountViewModel::clearFeedback,
         )
         return

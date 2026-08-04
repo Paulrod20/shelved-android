@@ -1,14 +1,12 @@
 package com.paulrod.shelved.ui.onboarding
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -145,34 +142,4 @@ internal fun OnboardingFinePrint(text: String) {
         textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth(),
     )
-}
-
-@Composable
-internal fun AuthModeSelector(selected: EmailAuthMode, onSelect: (EmailAuthMode) -> Unit) {
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Surface).padding(4.dp)) {
-        AuthModeOption(stringResource(R.string.onboarding_create_account), EmailAuthMode.CREATE_ACCOUNT, selected, onSelect)
-        AuthModeOption(stringResource(R.string.onboarding_sign_in), EmailAuthMode.SIGN_IN, selected, onSelect)
-    }
-}
-
-@Composable
-private fun RowScope.AuthModeOption(
-    label: String,
-    mode: EmailAuthMode,
-    selected: EmailAuthMode,
-    onSelect: (EmailAuthMode) -> Unit,
-) {
-    Box(
-        Modifier.weight(1f).clip(RoundedCornerShape(11.dp))
-            .background(if (mode == selected) SurfaceElevated else Color.Transparent)
-            .clickable { onSelect(mode) }.padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            label,
-            color = if (mode == selected) TextPrimary else TextMuted,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 13.sp,
-        )
-    }
 }

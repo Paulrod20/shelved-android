@@ -27,10 +27,10 @@
 
     <string name="onboarding_account_eyebrow">YOUR SHELF, YOUR CHOICE</string>
     <string name="onboarding_account_title">Start your way.</string>
-    <string name="onboarding_account_body">Sign in with Google or email, or keep your library local and use Shelved without an account.</string>
+    <string name="onboarding_account_body">Create an account to save your library, or try Shelved first without committing.</string>
     <string name="onboarding_continue_email">Continue with email</string>
-    <string name="onboarding_continue_local">Use Shelved without an account</string>
-    <string name="onboarding_local_note">Signing in is optional. Local mode keeps your library on this device.</string>
+    <string name="onboarding_continue_local">Try Shelved first</string>
+    <string name="onboarding_local_note">Your trial library lasts until you close the app. Sign in before then to save it.</string>
 
     <string name="onboarding_email_eyebrow">SHELVED ACCOUNT</string>
     <string name="onboarding_create_title">Create your account.</string>
@@ -61,16 +61,18 @@
     <string name="onboarding_error_unknown">Something went wrong while signing in. Please try again.</string>
 
     <string name="account_sign_in_header">Account</string>
+    <string name="account_create_title">Save your library.</string>
+    <string name="account_create_body">Create an account with Google or email. Everything from this trial will be saved to your account.</string>
     <string name="account_sign_in_title">Welcome back.</string>
-    <string name="account_sign_in_body">Sign in to your Shelved account without changing anything in your local library.</string>
-    <string name="account_or_email">OR SIGN IN WITH EMAIL</string>
+    <string name="account_sign_in_body">Sign in to your existing account. Games from this trial will be added to your saved library.</string>
+    <string name="account_or_email">OR CONTINUE WITH EMAIL</string>
     <string name="account_section">Account</string>
-    <string name="account_local_title">Using Shelved locally</string>
-    <string name="account_local_body">Sign in anytime to connect an existing account.</string>
+    <string name="account_local_title">You’re trying Shelved</string>
+    <string name="account_local_body">This trial library will be cleared when you close the app. Create an account or sign in now to save it.</string>
     <string name="account_signed_in_as">Signed in as</string>
     <string name="account_verification_pending">Email verification pending</string>
     <string name="account_sign_out">Sign out</string>
-    <string name="account_sign_in">Sign in</string>
+    <string name="account_sign_in">Save my trial</string>
     <string name="onboarding_existing_account">Already have an account? Sign in</string>
 
     <string name="profile_picture_section">Profile picture</string>

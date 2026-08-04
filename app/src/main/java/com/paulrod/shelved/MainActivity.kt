@@ -22,4 +22,11 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onDestroy() {
+        if (isFinishing) {
+            (application as ShelvedApplication).container.discardTrialIfSignedOut()
+        }
+        super.onDestroy()
+    }
 }

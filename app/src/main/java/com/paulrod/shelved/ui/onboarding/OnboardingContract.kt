@@ -3,8 +3,6 @@ package com.paulrod.shelved.ui.onboarding
 import com.paulrod.shelved.data.auth.VerificationDelivery
 import com.paulrod.shelved.ui.auth.AuthMessage
 
-enum class EmailAuthMode { CREATE_ACCOUNT, SIGN_IN }
-
 data class OnboardingUiState(
     val isCompleted: Boolean = false,
     val isLoading: Boolean = false,

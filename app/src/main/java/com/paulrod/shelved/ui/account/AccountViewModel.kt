@@ -6,9 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.paulrod.shelved.data.auth.AuthGateway
 import com.paulrod.shelved.data.auth.AuthSessionProvider
 import com.paulrod.shelved.data.auth.AuthSession
+import com.paulrod.shelved.data.auth.EmailAuthResult
+import com.paulrod.shelved.data.auth.VerificationDelivery
 import com.paulrod.shelved.data.auth.authFailure
 import com.paulrod.shelved.ui.auth.AuthMessage
 import com.paulrod.shelved.ui.auth.toAuthMessage
+import com.paulrod.shelved.ui.auth.validateCreateAccount
 import com.paulrod.shelved.ui.auth.validateResetEmail
 import com.paulrod.shelved.ui.auth.validateSignIn
 import kotlinx.coroutines.CancellationException
@@ -33,12 +36,39 @@ class AccountViewModel(
     }
 
     fun showSignIn() {
-        _uiState.update { it.copy(isSignInVisible = true, errorMessage = null, noticeMessage = null) }
+        _uiState.update {
+            it.copy(
+                isSignInVisible = true,
+                errorMessage = null,
+                noticeMessage = null,
+                verificationEmail = null,
+                verificationDelivery = null,
+            )
+        }
     }
 
     fun dismissSignIn() {
         if (_uiState.value.isLoading) return
-        _uiState.update { it.copy(isSignInVisible = false, errorMessage = null, noticeMessage = null) }
+        _uiState.update {
+            it.copy(
+                isSignInVisible = false,
+                errorMessage = null,
+                noticeMessage = null,
+                verificationEmail = null,
+                verificationDelivery = null,
+            )
+        }
+    }
+
+    fun createEmailAccount(email: String, password: String, confirmation: String) {
+        validateCreateAccount(email.trim(), password, confirmation)?.let {
+            showError(it)
+            return
+        }
+        launchAuth(
+            operation = { authGateway.createEmailAccount(email.trim(), password) },
+            onSuccess = ::handleEmailAuthResult,
+        )
     }
 
     fun signInWithEmail(email: String, password: String) {
@@ -48,7 +78,7 @@ class AccountViewModel(
         }
         launchAuth(
             operation = { authGateway.signInWithEmail(email.trim(), password) },
-            onSuccess = { finishSignIn() },
+            onSuccess = ::handleEmailAuthResult,
         )
     }
 
@@ -82,6 +112,24 @@ class AccountViewModel(
         )
     }
 
+    fun continueAfterVerification() = finishSignIn()
+
+    fun resendVerification() {
+        launchAuth(
+            operation = authGateway::resendVerification,
+            onSuccess = {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = null,
+                        noticeMessage = AuthMessage.VERIFICATION_EMAIL_SENT,
+                        verificationDelivery = VerificationDelivery.SENT,
+                    )
+                }
+            },
+        )
+    }
+
     fun signOut() {
         authGateway.signOut()
         _uiState.update {
@@ -91,6 +139,8 @@ class AccountViewModel(
                 isLoading = false,
                 errorMessage = null,
                 noticeMessage = null,
+                verificationEmail = null,
+                verificationDelivery = null,
             )
         }
     }
@@ -106,7 +156,30 @@ class AccountViewModel(
                 isLoading = false,
                 errorMessage = null,
                 noticeMessage = null,
+                verificationEmail = null,
+                verificationDelivery = null,
             )
+        }
+    }
+
+    private fun handleEmailAuthResult(result: EmailAuthResult) {
+        when (result) {
+            EmailAuthResult.SignedIn -> finishSignIn()
+            is EmailAuthResult.VerificationRequired -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = if (result.delivery == VerificationDelivery.SEND_FAILED) {
+                            AuthMessage.VERIFICATION_SEND_FAILED
+                        } else {
+                            null
+                        },
+                        noticeMessage = null,
+                        verificationEmail = result.email,
+                        verificationDelivery = result.delivery,
+                    )
+                }
+            }
         }
     }
 

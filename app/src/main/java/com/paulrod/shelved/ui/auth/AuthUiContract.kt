@@ -19,6 +19,8 @@ enum class AuthMessage {
     UNKNOWN,
 }
 
+enum class EmailAuthMode { CREATE_ACCOUNT, SIGN_IN }
+
 internal fun validateCreateAccount(email: String, password: String, confirmation: String): AuthMessage? = when {
     !email.isValidEmail() -> AuthMessage.INVALID_EMAIL
     password.length < 8 -> AuthMessage.SHORT_PASSWORD

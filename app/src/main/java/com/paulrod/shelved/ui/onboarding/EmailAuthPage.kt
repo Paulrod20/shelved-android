@@ -19,10 +19,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.paulrod.shelved.R
 import com.paulrod.shelved.ui.auth.AuthFeedbackCard
+import com.paulrod.shelved.ui.auth.AuthModeSelector
 import com.paulrod.shelved.ui.auth.AuthPasswordField
 import com.paulrod.shelved.ui.auth.AuthPrimaryButton
 import com.paulrod.shelved.ui.auth.AuthTextButton
 import com.paulrod.shelved.ui.auth.AuthTextField
+import com.paulrod.shelved.ui.auth.EmailAuthMode
 import com.paulrod.shelved.ui.auth.localized
 import com.paulrod.shelved.ui.components.PageTitle
 

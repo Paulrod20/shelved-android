@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.paulrod.shelved.ui.theme.Background
+import com.paulrod.shelved.ui.auth.EmailAuthMode
 
 private enum class OnboardingPage { WELCOME, FEATURES, ACCOUNT, EMAIL, VERIFY }
 

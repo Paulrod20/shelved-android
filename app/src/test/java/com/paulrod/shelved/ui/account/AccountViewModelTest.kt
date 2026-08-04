@@ -5,6 +5,7 @@ import com.paulrod.shelved.data.auth.AuthGateway
 import com.paulrod.shelved.data.auth.AuthSession
 import com.paulrod.shelved.data.auth.AuthSessionProvider
 import com.paulrod.shelved.data.auth.EmailAuthResult
+import com.paulrod.shelved.data.auth.VerificationDelivery
 import com.paulrod.shelved.test.MainDispatcherRule
 import com.paulrod.shelved.ui.auth.AuthMessage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -57,6 +58,37 @@ class AccountViewModelTest {
     }
 
     @Test
+    fun createAccountTrimsEmailAndShowsVerificationBeforeClosing() = runTest {
+        auth.createResult = EmailAuthResult.VerificationRequired(
+            "player@example.com",
+            VerificationDelivery.SENT,
+        )
+        viewModel.showSignIn()
+
+        viewModel.createEmailAccount(" player@example.com ", "password", "password")
+        advanceUntilIdle()
+
+        assertEquals("player@example.com", auth.lastCreatedEmail)
+        assertEquals("player@example.com", viewModel.uiState.value.verificationEmail)
+        assertTrue(viewModel.uiState.value.isSignInVisible)
+
+        viewModel.continueAfterVerification()
+
+        assertFalse(viewModel.uiState.value.isSignInVisible)
+        assertNull(viewModel.uiState.value.verificationEmail)
+    }
+
+    @Test
+    fun mismatchedCreateAccountPasswordsStayOnScreen() {
+        viewModel.showSignIn()
+
+        viewModel.createEmailAccount("player@example.com", "password", "different")
+
+        assertNull(auth.lastCreatedEmail)
+        assertEquals(AuthMessage.PASSWORD_MISMATCH, viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
     fun invalidCredentialsStayOnScreen() {
         viewModel.showSignIn()
 
@@ -97,14 +129,18 @@ private class FakeAccountAuth(
     override val sessions: Flow<AuthSession> = sessionFlow
 
     var lastEmail: String? = null
+    var lastCreatedEmail: String? = null
+    var createResult: EmailAuthResult = EmailAuthResult.SignedIn
     var didSignOut = false
 
     fun emit(session: AuthSession) {
         sessionFlow.value = session
     }
 
-    override suspend fun createEmailAccount(email: String, password: String): EmailAuthResult =
-        EmailAuthResult.SignedIn
+    override suspend fun createEmailAccount(email: String, password: String): EmailAuthResult {
+        lastCreatedEmail = email
+        return createResult
+    }
 
     override suspend fun signInWithEmail(email: String, password: String): EmailAuthResult {
         lastEmail = email
