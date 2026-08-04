@@ -84,6 +84,7 @@
     <string name="profile_picture_error">We couldn’t save that photo. Try a different image.</string>
 
     <string name="cover_art_section">Cover art</string>
+    <string name="cover_art_description">Cover art for %1$s</string>
     <string name="cover_art_choose">Choose new cover</string>
     <string name="cover_art_change">Change cover</string>
     <string name="cover_art_use_original">Use original</string>

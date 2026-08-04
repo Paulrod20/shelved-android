@@ -3,11 +3,8 @@ package com.paulrod.shelved.ui.backlog
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,7 +17,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,20 +25,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 import com.paulrod.shelved.R
 import com.paulrod.shelved.data.cover.CoverCropRequest
 import com.paulrod.shelved.data.image.LocalImageSource
 import com.paulrod.shelved.data.model.Game
 import com.paulrod.shelved.ui.components.CatalogGameSheet
 import com.paulrod.shelved.ui.components.GameCover
-import com.paulrod.shelved.ui.components.coverModel
 import com.paulrod.shelved.ui.components.PrimaryButton
 import com.paulrod.shelved.ui.components.SearchField
 import com.paulrod.shelved.ui.components.SearchFailurePanel
@@ -54,8 +47,6 @@ import com.paulrod.shelved.ui.components.StatusPicker
 import com.paulrod.shelved.ui.search.SearchStatus
 import com.paulrod.shelved.ui.search.SearchUiState
 import com.paulrod.shelved.ui.theme.Accent
-import com.paulrod.shelved.ui.theme.SurfaceElevated
-import com.paulrod.shelved.ui.theme.TextMuted
 import com.paulrod.shelved.ui.theme.TextPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -137,63 +128,15 @@ internal fun EditGameSheet(
         uri?.let { cropSource = LocalImageSource(it.toString()) }
     }
     ShelvedSheet("Game Details", onClose) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)).background(SurfaceElevated)) {
-                game.coverModel()?.let { model ->
-                    AsyncImage(model, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                }
-            }
-            Text(
-                game.name,
-                color = TextPrimary,
-                fontSize = 19.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 14.dp),
-            )
-        }
-        SectionLabel(stringResource(R.string.cover_art_section))
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TextButton(
-                enabled = !isCoverLoading,
-                onClick = {
-                    imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                },
-            ) {
-                Text(
-                    stringResource(
-                        if (game.customCoverImagePath == null) R.string.cover_art_choose else R.string.cover_art_change,
-                    ),
-                    color = Accent,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-            if (game.customCoverImagePath != null) {
-                TextButton(
-                    enabled = !isCoverLoading,
-                    onClick = onCoverRemoved,
-                ) {
-                    Text(stringResource(R.string.cover_art_use_original), color = TextMuted)
-                }
-            }
-            if (isCoverLoading) {
-                CircularProgressIndicator(
-                    color = Accent,
-                    strokeWidth = 2.dp,
-                    modifier = Modifier.padding(start = 8.dp).size(20.dp),
-                )
-            }
-        }
-        if (hasCoverError) {
-            Text(
-                stringResource(R.string.cover_art_save_error),
-                color = androidx.compose.ui.graphics.Color(0xFFFF8A80),
-                fontSize = 12.sp,
-                modifier = Modifier.padding(bottom = 6.dp),
-            )
-        }
+        GameEditorHeader(
+            game = game,
+            isCoverLoading = isCoverLoading,
+            hasCoverError = hasCoverError,
+            onChooseCover = {
+                imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            },
+            onUseOriginalCover = onCoverRemoved,
+        )
         SectionLabel("Status")
         StatusPicker(status) { status = it }
         SectionLabel("Hours played")
