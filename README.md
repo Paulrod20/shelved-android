@@ -6,6 +6,8 @@ A native, Android-exclusive game library built with Kotlin and Jetpack Compose. 
 
 Signed-in libraries are backed up to Cloud Firestore under `users/{uid}` and remain private to that Firebase Authentication user. Try mode uses an in-memory library that is discarded when the app process closes and never contacts Firestore. Signing in during the trial imports its current games and profile into the authenticated library before cloud synchronization.
 
+Personal ratings, reviews, and notes are part of that private library data. They are not exposed through a public social collection.
+
 Before using cloud backup in a Firebase project:
 
 1. Create a Cloud Firestore database in the Firebase console.

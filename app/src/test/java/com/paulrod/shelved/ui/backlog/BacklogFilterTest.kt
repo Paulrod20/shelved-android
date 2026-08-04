@@ -34,4 +34,20 @@ class BacklogFilterTest {
         assertEquals(listOf("Astro Bot", "Control", "Zelda"), ascending.map { it.name })
         assertEquals(listOf("Zelda", "Control", "Astro Bot"), descending.map { it.name })
     }
+
+    @Test
+    fun ratingSortWorksInBothDirectionsAndKeepsUnratedGamesLast() {
+        val ratedGames = listOf(
+            Game(id = "unrated", name = "Unrated"),
+            Game(id = "five", name = "Five stars", rating = 5),
+            Game(id = "one", name = "One star", rating = 1),
+            Game(id = "three", name = "Three stars", rating = 3),
+        )
+
+        val highToLow = filteredAndSortedGames(ratedGames, null, "", BacklogSort.RATING_HIGH_TO_LOW)
+        val lowToHigh = filteredAndSortedGames(ratedGames, null, "", BacklogSort.RATING_LOW_TO_HIGH)
+
+        assertEquals(listOf(5, 3, 1, null), highToLow.map(Game::rating))
+        assertEquals(listOf(1, 3, 5, null), lowToHigh.map(Game::rating))
+    }
 }

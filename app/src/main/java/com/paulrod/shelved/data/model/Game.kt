@@ -14,9 +14,22 @@ data class Game(
     val customCoverImagePath: String? = null,
     val status: GameStatus = GameStatus.BACKLOG,
     val hoursPlayed: Int? = null,
+    val rating: Int? = null,
+    val review: String = "",
     val notes: List<GameNote> = emptyList(),
     val released: String? = null,
     val playtime: Int? = null,
     val platforms: List<String> = emptyList(),
     val description: String? = null,
-)
+) {
+    init {
+        require(rating == null || rating in MIN_RATING..MAX_RATING) {
+            "Game rating must be between $MIN_RATING and $MAX_RATING."
+        }
+    }
+
+    companion object {
+        const val MIN_RATING = 1
+        const val MAX_RATING = 5
+    }
+}

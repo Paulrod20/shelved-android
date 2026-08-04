@@ -94,6 +94,13 @@
     <string name="cover_crop_open_error">This image could not be opened. Choose a different image.</string>
     <string name="cover_crop_confirm">Use this cover</string>
 
+    <string name="review_section">Your review</string>
+    <string name="review_private_note">Private to you.</string>
+    <string name="review_placeholder">What did you think of this game?</string>
+    <string name="review_clear_rating">Clear</string>
+    <string name="review_rating_display">%1$d out of %2$d stars</string>
+    <string name="review_rate_stars">Rate %1$d out of %2$d stars</string>
+
     <string name="search_error_connection">Couldn’t connect to game search. Check your internet connection and try again.</string>
     <string name="search_error_unavailable">Game search is temporarily unavailable. Please try again.</string>
     <string name="search_retry">Retry</string>

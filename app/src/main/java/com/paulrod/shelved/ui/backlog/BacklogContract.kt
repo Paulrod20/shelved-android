@@ -8,6 +8,8 @@ enum class BacklogSort(val label: String) {
     RECENTLY_ADDED("Recently added"),
     NAME_ASCENDING("Name A–Z"),
     NAME_DESCENDING("Name Z–A"),
+    RATING_HIGH_TO_LOW("Rating: high to low"),
+    RATING_LOW_TO_HIGH("Rating: low to high"),
 }
 
 data class BacklogUiState(
@@ -63,5 +65,15 @@ internal fun filteredAndSortedGames(
         BacklogSort.RECENTLY_ADDED -> matchingGames
         BacklogSort.NAME_ASCENDING -> matchingGames.sortedBy { it.name.lowercase() }
         BacklogSort.NAME_DESCENDING -> matchingGames.sortedByDescending { it.name.lowercase() }
+        BacklogSort.RATING_HIGH_TO_LOW -> matchingGames.sortedWith(
+            compareBy<Game> { it.rating == null }
+                .thenByDescending { it.rating ?: Int.MIN_VALUE }
+                .thenBy { it.name.lowercase() },
+        )
+        BacklogSort.RATING_LOW_TO_HIGH -> matchingGames.sortedWith(
+            compareBy<Game> { it.rating == null }
+                .thenBy { it.rating ?: Int.MAX_VALUE }
+                .thenBy { it.name.lowercase() },
+        )
     }
 }

@@ -129,6 +129,8 @@ internal fun EditGameSheet(
 ) {
     var status by remember { mutableStateOf(game.status) }
     var hours by remember { mutableStateOf(game.hoursPlayed?.toString().orEmpty()) }
+    var rating by remember { mutableStateOf(game.rating) }
+    var review by remember { mutableStateOf(game.review) }
     var notes by remember { mutableStateOf(game.notes) }
     var cropSource by remember(game.id) { mutableStateOf<LocalImageSource?>(null) }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -196,9 +198,23 @@ internal fun EditGameSheet(
         StatusPicker(status) { status = it }
         SectionLabel("Hours played")
         ShelvedField(hours, { hours = it.filter(Char::isDigit) }, "0", KeyboardType.Number)
+        GameReviewSection(
+            rating = rating,
+            review = review,
+            onRatingChange = { rating = it },
+            onReviewChange = { review = it },
+        )
         GameNotesSection(notes = notes, onNotesChange = { notes = it })
         PrimaryButton("Save", enabled = !isCoverLoading) {
-            onSave(game.copy(status = status, hoursPlayed = hours.toIntOrNull(), notes = notes))
+            onSave(
+                game.copy(
+                    status = status,
+                    hoursPlayed = hours.toIntOrNull(),
+                    rating = rating,
+                    review = review.trim(),
+                    notes = notes,
+                ),
+            )
         }
     }
     cropSource?.let { source ->

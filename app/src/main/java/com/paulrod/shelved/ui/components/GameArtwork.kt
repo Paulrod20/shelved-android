@@ -62,6 +62,12 @@ fun GameCard(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth().padding(top = 7.dp),
         )
+        game.rating?.let { rating ->
+            StarRatingDisplay(
+                rating = rating,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 3.dp),
+            )
+        }
     }
 }
 

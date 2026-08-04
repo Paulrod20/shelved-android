@@ -80,12 +80,21 @@ class LibrarySessionCoordinatorTest {
         ).start()
         runCurrent()
 
-        trial.addGame(Game("trial", "Trial game"))
+        trial.addGame(
+            Game(
+                id = "trial",
+                name = "Trial game",
+                rating = 4,
+                review = "My trial review.",
+            ),
+        )
         sessionProvider.emit(AuthSession(userId = "user"))
         runCurrent()
 
         assertEquals(listOf("trial"), persistent.games.value.map(Game::id))
         assertEquals(listOf("trial"), active.games.value.map(Game::id))
+        assertEquals(4, persistent.games.value.single().rating)
+        assertEquals("My trial review.", persistent.games.value.single().review)
         assertTrue(trial.games.value.isEmpty())
         assertEquals(listOf("user"), synchronizer.userIds)
     }

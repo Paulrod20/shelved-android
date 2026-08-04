@@ -60,5 +60,16 @@ class LibraryMergeTest {
         assertTrue(changes.gamesToUpsert.isEmpty())
     }
 
+    @Test
+    fun changingRatingOrReviewCreatesACloudGameUpdate() {
+        val previousGame = game("game", "Game")
+        val reviewedGame = previousGame.copy(rating = 5, review = "A favorite.")
+
+        val changes = LibrarySnapshot(games = listOf(reviewedGame))
+            .changesSince(LibrarySnapshot(games = listOf(previousGame)))
+
+        assertEquals(listOf(reviewedGame), changes.gamesToUpsert)
+    }
+
     private fun game(id: String, name: String) = Game(id = id, name = name)
 }
